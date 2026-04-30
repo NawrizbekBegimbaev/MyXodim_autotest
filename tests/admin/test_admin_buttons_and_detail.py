@@ -48,9 +48,7 @@ def _fresh_data() -> dict[str, str]:
 def _open_list(ctx: BrowserContext, settings: Settings) -> OrganizationsPage:
     page = ctx.new_page()
     page.goto(f"{settings.admin_url}/dashboard", wait_until="networkidle")
-    page.wait_for_timeout(1_000)
     page.goto(f"{settings.admin_url}/tenants", wait_until="networkidle")
-    page.wait_for_timeout(2_500)
     orgs = OrganizationsPage(page)
     expect(orgs.heading).to_be_visible(timeout=settings.nav_timeout)
     expect(orgs.table.get_by_role("row").nth(1)).to_be_visible(timeout=settings.nav_timeout)
@@ -86,8 +84,7 @@ def test_form_cancel_button_does_not_create(
         pinfl=data["pinfl"],
     )
     page.get_by_role("button", name="Отмена").click()
-    page.wait_for_timeout(1_000)
-    # success heading НЕ появился
+    # success heading НЕ появился; expect.not_to_be_visible имеет встроенный retry
     expect(page.get_by_role("heading", name="Компания создана", level=5)).not_to_be_visible()
 
 
@@ -109,7 +106,6 @@ def test_success_back_to_list_button_redirects(
     expect(success.heading).to_be_visible(timeout=settings.nav_timeout)
 
     success.click_back()
-    page.wait_for_timeout(1_500)
     expect(page).to_have_url(re.compile(r"/tenants(\?|$)"), timeout=settings.nav_timeout)
 
 
@@ -137,8 +133,8 @@ def test_records_per_page_combobox_has_expected_options(
     orgs = _open_list(super_admin_live_context, settings)
     combo = orgs.page.get_by_role("combobox").last
     combo.click()
-    orgs.page.wait_for_timeout(800)
     listbox = orgs.page.get_by_role("listbox")
+    expect(listbox).to_be_visible(timeout=settings.expect_timeout)
     for opt in ["10", "25", "50", "100"]:
         expect(listbox.get_by_role("option", name=opt, exact=True)).to_be_visible()
 
@@ -152,9 +148,14 @@ def test_records_per_page_change_to_50(
     page = orgs.page
     combo = page.get_by_role("combobox").last
     combo.click()
-    page.wait_for_timeout(800)
-    page.get_by_role("listbox").get_by_role("option", name="50", exact=True).click()
-    page.wait_for_timeout(2_000)
+    listbox = page.get_by_role("listbox")
+    expect(listbox).to_be_visible(timeout=settings.expect_timeout)
+    # Ждём ответ от бэка с новым размером страницы — на /tenants?size=50
+    with page.expect_response(
+        lambda r: "/tenants" in r.url and r.request.method == "GET",
+        timeout=settings.nav_timeout,
+    ):
+        listbox.get_by_role("option", name="50", exact=True).click()
     expect(orgs.heading).to_be_visible()
 
 
@@ -165,8 +166,9 @@ def test_dashboard_all_recent_button_navigates_to_tenants(
 ) -> None:
     page = super_admin_live_context.new_page()
     page.goto(f"{settings.admin_url}/dashboard", wait_until="networkidle")
-    page.wait_for_timeout(1_500)
-    page.get_by_role("button", name="Все").click()
+    btn_all = page.get_by_role("button", name="Все")
+    expect(btn_all).to_be_visible(timeout=settings.expect_timeout)
+    btn_all.click()
     expect(page).to_have_url(re.compile(r"/tenants(\?|$)"), timeout=settings.nav_timeout)
 
 
@@ -189,7 +191,10 @@ def detail_page(
     expect(page).to_have_url(
         re.compile(r"/tenants/[0-9a-f-]{36}"), timeout=settings.nav_timeout
     )
-    page.wait_for_timeout(1_500)
+    # detail-страница рендерится после URL match — ждём ключевой heading
+    expect(page.get_by_role("heading", name=anchor_company["name"], level=5)).to_be_visible(
+        timeout=settings.nav_timeout
+    )
     yield page, anchor_company
 
 
@@ -270,8 +275,7 @@ def test_company_form_long_paste_does_not_crash(
     expect(create.page_heading).to_be_visible(timeout=settings.expect_timeout)
     name_input = page.get_by_role("textbox", name="Название компании")
     name_input.fill("X" * 5000)
-    page.wait_for_timeout(500)
-    # Страница ещё жива — heading "Новая компания" виден
+    # Страница ещё жива — heading "Новая компания" виден (expect ретраится)
     expect(create.page_heading).to_be_visible()
 
 
@@ -288,7 +292,6 @@ def test_company_form_drag_drop_does_not_crash(
     name_input.fill("Source name")
     # Drag из name в slug — поведение браузера зависит, тест проверяет что фронт не падает
     name_input.drag_to(slug_input)
-    page.wait_for_timeout(500)
     expect(create.page_heading).to_be_visible()
 
 
@@ -301,7 +304,6 @@ def test_company_form_emoji_in_name(
     create = CreateCompanyPage(page).goto(settings.admin_url)
     name_input = page.get_by_role("textbox", name="Название компании")
     name_input.fill("Test 🏢 Company 🇺🇿 ✓")
-    page.wait_for_timeout(300)
     expect(create.page_heading).to_be_visible()
 
 
@@ -314,5 +316,4 @@ def test_company_form_rtl_text_in_name(
     create = CreateCompanyPage(page).goto(settings.admin_url)
     name_input = page.get_by_role("textbox", name="Название компании")
     name_input.fill("شركة اختبار")  # арабский — справа налево
-    page.wait_for_timeout(300)
     expect(create.page_heading).to_be_visible()

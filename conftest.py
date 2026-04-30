@@ -1,11 +1,12 @@
 """Глобальные фикстуры. См. CLAUDE.md §10 (storage_state) и §11 (параллельность)."""
 
+import re
 from collections.abc import Iterator
 from pathlib import Path
 from typing import Any
 
 import pytest
-from playwright.sync_api import Browser, BrowserContext, Page
+from playwright.sync_api import Browser, BrowserContext, ConsoleMessage, Page, Request, Response
 
 from config.settings import Settings
 from data import phone_pool
@@ -19,6 +20,18 @@ from pages.admin.login_page import AdminLoginPage
 from pages.client.login_page import ClientLoginPage
 from pages.client.otp_page import OtpPage
 from pages.client.select_organization_page import SelectOrganizationPage
+
+# Игнор-паттерны для console — известные шумные ошибки сторонних библиотек,
+# которые не относятся к нашим тестам. Расширяй по мере прогона.
+_CONSOLE_IGNORE = (
+    re.compile(r"ResizeObserver loop"),
+    re.compile(r"Failed to load resource.*favicon"),
+    # Расширения браузера / Chrome DevTools service workers
+    re.compile(r"chrome-extension://"),
+)
+
+# Только бэкенды нашего dev-стенда — игнорируем 4xx/5xx от сторонних аналитики/CDN.
+_BACKEND_HOST_PAT = re.compile(r"https?://(dev-hub-(?:api|admin|client)|dev-mock-1c)\.greatmall\.uz")
 
 
 @pytest.fixture(scope="session")
@@ -46,6 +59,108 @@ def browser_context_args(
         "timezone_id": "Asia/Tashkent",
         "ignore_https_errors": True,
     }
+
+
+def _attach_console_guard(
+    page: Page, errors: list[str], requests: dict[str, Request]
+) -> None:
+    """Цепляем listeners на page: console errors, pageerror, response 5xx, неудачные запросы.
+
+    Все собирается в `errors` (для финального assert) и `requests` (last-known per URL,
+    для логирования контекста при падении).
+    """
+
+    def _on_console(msg: ConsoleMessage) -> None:
+        if msg.type != "error":
+            return
+        text = msg.text
+        if any(p.search(text) for p in _CONSOLE_IGNORE):
+            return
+        errors.append(f"[console.error] {text}")
+
+    def _on_pageerror(exc: Exception) -> None:
+        # Нерасхваченные JS-исключения. Эти ВСЕГДА баг — никаких ignore.
+        errors.append(f"[pageerror] {exc}")
+
+    def _on_response(resp: Response) -> None:
+        # Ловим только 5xx от наших бэков — это серверные баги.
+        # 4xx могут быть валидным negative-кейсом, фиксируем но не валим.
+        if resp.status < 500:
+            return
+        if not _BACKEND_HOST_PAT.search(resp.url):
+            return
+        errors.append(f"[5xx] {resp.status} {resp.request.method} {resp.url}")
+
+    def _on_requestfailed(req: Request) -> None:
+        if not _BACKEND_HOST_PAT.search(req.url):
+            return
+        errors.append(f"[reqfailed] {req.method} {req.url} — {req.failure}")
+
+    def _on_request(req: Request) -> None:
+        requests[req.url] = req
+
+    page.on("console", _on_console)
+    page.on("pageerror", _on_pageerror)
+    page.on("response", _on_response)
+    page.on("requestfailed", _on_requestfailed)
+    page.on("request", _on_request)
+
+
+@pytest.fixture(autouse=True)
+def _strict_console(request: pytest.FixtureRequest) -> Iterator[None]:
+    """Автоматически вешает guard на все Page, открытые через стандартные фикстуры.
+
+    Включается через ENV `BH_STRICT_CONSOLE=1` (по умолчанию soft — пишет в stderr).
+    Тест может opt-out через маркер `@pytest.mark.allow_console_errors`.
+
+    Стратегия:
+    - Хук `BrowserContext.new_page` patch-им чтобы навешать listeners на каждый Page.
+    - В teardown: если errors не пуст и нет маркера — fail (или warn если soft).
+    """
+    import os
+
+    if request.node.get_closest_marker("allow_console_errors"):
+        yield
+        return
+
+    errors: list[str] = []
+    last_requests: dict[str, Request] = {}
+    strict = os.environ.get("BH_STRICT_CONSOLE", "0") == "1"
+
+    # Патчим методы создания page у всех BrowserContext'ов в этой сессии.
+    # Делаем неинвазивно — оборачиваем оригинал.
+    original_new_page = BrowserContext.new_page
+
+    def patched_new_page(self: BrowserContext) -> Page:
+        page = original_new_page(self)
+        _attach_console_guard(page, errors, last_requests)
+        return page
+
+    BrowserContext.new_page = patched_new_page  # type: ignore[method-assign]
+    try:
+        yield
+    finally:
+        BrowserContext.new_page = original_new_page  # type: ignore[method-assign]
+        if errors:
+            summary = "\n  ".join(errors[:20])
+            msg = f"Browser-side errors during test:\n  {summary}"
+            if strict:
+                pytest.fail(msg, pytrace=False)
+            else:
+                # Soft: пишем в stderr и attach к allure если есть
+                import sys
+
+                print(f"\n[console-guard] {msg}", file=sys.stderr)
+                try:
+                    import allure
+
+                    allure.attach(
+                        "\n".join(errors),
+                        name="browser-errors",
+                        attachment_type=allure.attachment_type.TEXT,
+                    )
+                except ImportError:
+                    pass
 
 
 @pytest.fixture(scope="session")
