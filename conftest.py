@@ -21,13 +21,17 @@ from pages.client.login_page import ClientLoginPage
 from pages.client.otp_page import OtpPage
 from pages.client.select_organization_page import SelectOrganizationPage
 
-# Игнор-паттерны для console — известные шумные ошибки сторонних библиотек,
-# которые не относятся к нашим тестам. Расширяй по мере прогона.
+# Игнор-паттерны для console — шум, не связанный с нашими багами. Расширяй по мере прогона.
+# 4xx-ответы браузер логирует как console.error — но 4xx часто валидное negative-поведение
+# и нам не нужен дубль с _on_response (который ловит 5xx отдельно).
 _CONSOLE_IGNORE = (
     re.compile(r"ResizeObserver loop"),
     re.compile(r"Failed to load resource.*favicon"),
-    # Расширения браузера / Chrome DevTools service workers
     re.compile(r"chrome-extension://"),
+    # Browser-emitted "Failed to load resource: 4xx" — наш _on_response отдельно ловит 5xx
+    re.compile(r"Failed to load resource: the server responded with a status of 4\d\d"),
+    # CORS preflight noise на dev-стенде
+    re.compile(r"Access to .* has been blocked by CORS"),
 )
 
 # Только бэкенды нашего dev-стенда — игнорируем 4xx/5xx от сторонних аналитики/CDN.
@@ -94,7 +98,12 @@ def _attach_console_guard(
     def _on_requestfailed(req: Request) -> None:
         if not _BACKEND_HOST_PAT.search(req.url):
             return
-        errors.append(f"[reqfailed] {req.method} {req.url} — {req.failure}")
+        # ERR_ABORTED — нормальное поведение когда страница навигирует и отменяет
+        # in-flight запросы за ассетами. Не баг.
+        failure = req.failure or ""
+        if "ERR_ABORTED" in failure:
+            return
+        errors.append(f"[reqfailed] {req.method} {req.url} — {failure}")
 
     def _on_request(req: Request) -> None:
         requests[req.url] = req
@@ -163,14 +172,33 @@ def _strict_console(request: pytest.FixtureRequest) -> Iterator[None]:
                     pass
 
 
+def _worker_id(request: pytest.FixtureRequest) -> str:
+    """xdist-aware worker id ('gw0','gw1',... или 'master' при -p no:xdist)."""
+    wi = getattr(request.config, "workerinput", None)
+    return wi["workerid"] if wi else "master"
+
+
+def _worker_state_path(base: str, worker: str) -> str:
+    """Превращает '.auth/super_admin.json' → '.auth/super_admin-gw0.json'.
+
+    Каждый xdist-воркер пишет в свой файл — иначе race на unlink/create.
+    """
+    if worker == "master":
+        return base
+    p = Path(base)
+    return str(p.with_name(f"{p.stem}-{worker}{p.suffix}"))
+
+
 @pytest.fixture(scope="session")
-def super_admin_state(browser: Browser, settings: Settings) -> str:
+def super_admin_state(
+    browser: Browser, settings: Settings, request: pytest.FixtureRequest
+) -> str:
     """UI-логин Super Admin один раз за сессию, сохраняем storage_state.
 
     Используется во всех тестах кроме главного E2E (где пользователи создаются внутри теста).
     """
     Path(AUTH_DIR).mkdir(exist_ok=True)
-    state_path = SUPER_ADMIN_STATE_FILE
+    state_path = _worker_state_path(SUPER_ADMIN_STATE_FILE, _worker_id(request))
     # Свежий UI-логин каждой pytest-сессии — JWT в файле может протухнуть
     # за время между прогонами (TTL ~1 час).
     Path(state_path).unlink(missing_ok=True)
@@ -235,14 +263,16 @@ def super_admin_live_context(
 
 
 @pytest.fixture(scope="session")
-def client_admin_state(browser: Browser, settings: Settings) -> str:
+def client_admin_state(
+    browser: Browser, settings: Settings, request: pytest.FixtureRequest
+) -> str:
     """UI-логин Client UI Администратора в существующей орг + storage_state.
 
     Используется для positive тестов в существующей орг (пока BUG-001 блокирует
     создание новых компаний). См. CLAUDE.md §10.
     """
     Path(AUTH_DIR).mkdir(exist_ok=True)
-    state_path = CLIENT_ADMIN_STATE_FILE
+    state_path = _worker_state_path(CLIENT_ADMIN_STATE_FILE, _worker_id(request))
     Path(state_path).unlink(missing_ok=True)
 
     ctx = browser.new_context(
