@@ -55,9 +55,8 @@ def test_member_edit_last_name_updates_in_list(
 
     # Возвращаемся в список — search по тому же телефону → видна новая фамилия
     members.search(phone)
-    client_admin_page.wait_for_timeout(1_500)
     row = members.row_by_phone(phone)
-    expect(row).to_contain_text(new_last, timeout=settings.expect_timeout)
+    expect(row).to_contain_text(new_last, timeout=settings.nav_timeout)
 
 
 @pytest.mark.positive
@@ -81,9 +80,8 @@ def test_member_edit_cancel_does_not_save(
     expect(edit.dialog).to_be_hidden(timeout=settings.expect_timeout)
 
     members.search(phone)
-    client_admin_page.wait_for_timeout(1_500)
     row = members.row_by_phone(phone)
-    expect(row).to_contain_text(initial_last, timeout=settings.expect_timeout)
+    expect(row).to_contain_text(initial_last, timeout=settings.nav_timeout)
 
 
 @pytest.mark.positive
@@ -101,12 +99,10 @@ def test_member_disable_changes_status(
     expect(members.row_by_phone(phone)).to_be_visible(timeout=settings.nav_timeout)
 
     members.click_disable_for_phone(phone)
-    client_admin_page.wait_for_timeout(2_000)
 
     members.search(phone)
-    client_admin_page.wait_for_timeout(1_500)
     row = members.row_by_phone(phone)
-    expect(row).to_contain_text("Отключён", timeout=settings.expect_timeout)
+    expect(row).to_contain_text("Отключён", timeout=settings.nav_timeout)
 
 
 # ---------- Search ----------
@@ -123,8 +119,7 @@ def test_members_search_by_phone_filters_list(
 
     members = _create_member_via_ui(client_admin_page, settings, phone, last)
     members.search(phone)
-    client_admin_page.wait_for_timeout(1_500)
-    expect(members.row_by_phone(phone)).to_be_visible(timeout=settings.expect_timeout)
+    expect(members.row_by_phone(phone)).to_be_visible(timeout=settings.nav_timeout)
 
 
 @pytest.mark.positive
@@ -138,8 +133,7 @@ def test_members_search_by_last_name_filters_list(
 
     members = _create_member_via_ui(client_admin_page, settings, phone, last)
     members.search(suffix)
-    client_admin_page.wait_for_timeout(1_500)
-    expect(members.row_by_phone(phone)).to_be_visible(timeout=settings.expect_timeout)
+    expect(members.row_by_phone(phone)).to_be_visible(timeout=settings.nav_timeout)
 
 
 @pytest.mark.negative
@@ -150,8 +144,9 @@ def test_members_search_with_no_match_returns_empty(
     members = MembersPage(client_admin_page).goto(settings.client_url)
     expect(members.heading).to_be_visible(timeout=settings.nav_timeout)
     members.search("__no_such_member_xyz_98765__")
-    client_admin_page.wait_for_timeout(1_500)
-    # таблица показывает 0 data rows
+    # Ждём что фронт отфильтровал — таблица не показывает совпадений по нашему уникальному паттерну
+    pattern_row = members.table.get_by_role("row").filter(has_text="__no_such_member_xyz_98765__")
+    expect(pattern_row).to_have_count(0, timeout=settings.expect_timeout)
     rows = members.table.get_by_role("row").all()
     # rows[0] = header; data rows должны быть пустые/empty-state
     assert len(rows) <= 2, f"Ожидали ≤2 row (header + опц. empty-state), получили {len(rows)}"
