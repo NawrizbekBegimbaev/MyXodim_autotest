@@ -37,9 +37,8 @@ class OrganizationsPage(BasePage):
         return self
 
     def search(self, query: str) -> Self:
-        """Фильтр через UI. Фильтрация client-side по уже загруженным записям
-        (BUG-007: pagination не работает — загружена только 1-я страница).
-        """
+        """Фильтр через UI. С 2026-05-03 (BUG-007 fixed) поиск идёт через
+        бэк по query-параметру `search=`, не client-side."""
         self._search.fill(query)
         return self
 
@@ -62,24 +61,32 @@ class OrganizationsPage(BasePage):
     def empty_state(self) -> Locator:
         return self.page.get_by_text("Компании не найдены")
 
+    def disable_toggle_for(self, name: str) -> Locator:
+        """MUI Switch с aria-label="Отключить" в строке активной компании.
+
+        Внутри это `<input role="switch">` обёрнутый в span с aria-label.
+        Playwright `get_by_label` находит по этой aria-label."""
+        return self.row_by_name(name).get_by_label("Отключить", exact=True)
+
+    def enable_toggle_for(self, name: str) -> Locator:
+        """MUI Switch с aria-label="Включить" в строке отключённой компании."""
+        return self.row_by_name(name).get_by_label("Включить", exact=True)
+
     def toggle_subscription_for(self, name: str) -> Self:
-        """Switch "Отключить/Включить" в строке. MUI DataGrid рендерит switch'и
-        в отдельном sticky контейнере — связываем по индексу с row.
+        """Кликает MUI Switch (Отключить/Включить) в строке.
+
+        aria-label на span-обёртке Switch'а указывает что произойдёт при
+        клике: "Отключить" если активна, "Включить" если отключена.
         """
-        rows = self._table.get_by_role("row").all()
-        for i, row in enumerate(rows):
-            if i == 0:
-                continue  # header
-            if name in (row.text_content() or ""):
-                # Дожидаемся ответа от toggle-эндпоинта (enable/disable)
-                with self.page.expect_response(
-                    lambda r: (
-                        "/api/v1/admin/tenants/" in r.url
-                        and r.request.method == "POST"
-                        and (r.url.endswith("/enable") or r.url.endswith("/disable"))
-                    ),
-                    timeout=15_000,
-                ):
-                    self.page.get_by_role("switch").nth(i - 1).click()
-                return self
-        raise AssertionError(f"Row '{name}' not found in tenants list")
+        row = self.row_by_name(name)
+        toggle = row.get_by_label(re.compile(r"^(Отключить|Включить)$"))
+        with self.page.expect_response(
+            lambda r: (
+                "/api/v1/admin/tenants/" in r.url
+                and r.request.method == "POST"
+                and (r.url.endswith("/enable") or r.url.endswith("/disable"))
+            ),
+            timeout=15_000,
+        ):
+            toggle.click()
+        return self

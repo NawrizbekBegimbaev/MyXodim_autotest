@@ -11,6 +11,31 @@ from pages.base_page import BasePage
 class DocumentsPage(BasePage):
     URL_PATH = "/documents"
 
+    # Табы статуса (с 2026-05-03 — 8 штук, было 5).
+    # Соответствует BRD §3.4 + статусы 1С-выгрузки.
+    STATUS_TABS: tuple[str, ...] = (
+        "Все",
+        "Черновик",
+        "В работе",
+        "Завершён",
+        "Отменён",
+        "В архиве",
+        "Отправлен в 1С",
+        "Ошибка выгрузки",
+    )
+
+    # Колонки таблицы документов (с 2026-05-03 — 7 штук,
+    # добавили "Откуда" и "Куда").
+    COLUMNS: tuple[str, ...] = (
+        "Номер",
+        "Заголовок",
+        "Откуда",
+        "Куда",
+        "Автор",
+        "Дата",
+        "Статус",
+    )
+
     def __init__(self, page: Page) -> None:
         super().__init__(page)
         self._heading: Locator = page.get_by_role(
@@ -19,6 +44,8 @@ class DocumentsPage(BasePage):
         self._create_button: Locator = page.get_by_role(
             "button", name=t("client.documents.create_button")
         )
+        self._tablist: Locator = page.get_by_role("tablist").first
+        self._table: Locator = page.get_by_role("table").first
 
     @property
     def heading(self) -> Locator:
@@ -27,6 +54,20 @@ class DocumentsPage(BasePage):
     @property
     def create_button(self) -> Locator:
         return self._create_button
+
+    @property
+    def tablist(self) -> Locator:
+        return self._tablist
+
+    @property
+    def table(self) -> Locator:
+        return self._table
+
+    def tab(self, name: str) -> Locator:
+        return self._tablist.get_by_role("tab", name=name, exact=True)
+
+    def column_header(self, name: str) -> Locator:
+        return self._table.get_by_role("columnheader", name=name, exact=True)
 
     def click_create(self) -> Self:
         self._create_button.click()

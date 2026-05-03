@@ -1,7 +1,11 @@
 """UC-4.3: Включение / отключение компании в Admin UI.
 
-BRD §4.3. В UI колонка "Действия" — switch (toggle): checked=Активна,
-unchecked=Отключена. API: POST /api/v1/admin/tenants/{id}/{enable|disable}.
+BRD §4.3. С 2026-05-03 — inline-кнопка "Отключить"/"Включить" в строке
+таблицы (раньше был switch в колонке "Действия"). API:
+POST /api/v1/admin/tenants/{id}/{enable|disable}.
+
+Тесты помечены creates_data — они мутируют состояние компании.
+Read-only проверка локатора кнопки — в test_admins_layout/test_company_list*.
 """
 
 from __future__ import annotations
@@ -26,6 +30,7 @@ def _open_list(ctx: BrowserContext, settings: Settings) -> OrganizationsPage:
     return orgs
 
 
+@pytest.mark.creates_data
 @pytest.mark.positive
 @allure.title("UC-4.3: отключить активную компанию → статус 'Отключена'")
 def test_disable_active_company_changes_status_to_disabled(
@@ -48,6 +53,7 @@ def test_disable_active_company_changes_status_to_disabled(
         expect(row).to_contain_text("Отключена", timeout=settings.nav_timeout)
 
 
+@pytest.mark.creates_data
 @pytest.mark.positive
 @allure.title("UC-4.3: включить отключённую компанию → статус 'Активна'")
 def test_enable_disabled_company_changes_status_to_active(
