@@ -156,7 +156,8 @@ class DocumentCreateWizardPage(BasePage):
         опцию (если label не указан) или option с указанным текстом.
         """
         self.page.get_by_role("combobox", name=t("client.documents.field_route")).click()
-        self.page.wait_for_timeout(400)
+        # Ждём появления хотя бы одной опции в открытом popup'е
+        self.page.get_by_role("option").first.wait_for(state="visible")
         if label is None:
             opts = self.page.get_by_role("option").all()
             non_placeholder = [
@@ -167,7 +168,6 @@ class DocumentCreateWizardPage(BasePage):
             non_placeholder[0].click()
         else:
             self.page.get_by_role("option", name=label).first.click()
-        self.page.wait_for_timeout(300)
         return self
 
     def select_target_branch_first(self) -> Self:
@@ -177,7 +177,7 @@ class DocumentCreateWizardPage(BasePage):
         """
         cbs = self.page.get_by_role("combobox").all()
         cbs[-1].click()
-        self.page.wait_for_timeout(400)
+        self.page.get_by_role("option").first.wait_for(state="visible")
         opts = self.page.get_by_role("option").all()
         non_placeholder = [
             o for o in opts if "Выберите" not in (o.text_content() or "")
@@ -185,7 +185,6 @@ class DocumentCreateWizardPage(BasePage):
         if not non_placeholder:
             raise RuntimeError("No branches available")
         non_placeholder[0].click()
-        self.page.wait_for_timeout(300)
         return self
 
     # --- Step 3: Проверка ---

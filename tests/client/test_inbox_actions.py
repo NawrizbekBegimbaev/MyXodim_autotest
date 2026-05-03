@@ -24,8 +24,7 @@ def test_inbox_search_no_match_does_not_crash(
 ) -> None:
     inbox = _open_inbox(client_admin_page, settings)
     inbox.search_input.fill("__no_such_doc_xyz_98765__")
-    client_admin_page.wait_for_timeout(1_500)
-    # heading и таблица всё ещё видны
+    # heading и таблица всё ещё видны (expect ретраится пока фронт фильтрует)
     expect(inbox.heading).to_be_visible()
 
 
@@ -47,7 +46,6 @@ def test_inbox_tab_switch_does_not_crash(
 ) -> None:
     inbox = _open_inbox(client_admin_page, settings)
     inbox.status_tab(tab).click()
-    client_admin_page.wait_for_timeout(800)
     expect(inbox.heading).to_be_visible()
 
 

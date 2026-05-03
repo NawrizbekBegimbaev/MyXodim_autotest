@@ -56,10 +56,8 @@ def test_documents_wizard_template_freeform_toggle(
     expect(wizard.tab_template).to_be_visible()
     expect(wizard.tab_freeform).to_be_visible()
     wizard.tab_freeform.click()
-    client_admin_page.wait_for_timeout(500)
     wizard.tab_template.click()
-    client_admin_page.wait_for_timeout(500)
-    # Не упало → ОК
+    # Не упало → ОК (expect ретраится пока вкладки переключаются)
     expect(wizard.heading).to_be_visible()
 
 

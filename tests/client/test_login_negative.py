@@ -89,7 +89,8 @@ def test_client_otp_empty_code_stays(
 ) -> None:
     fresh_client_login.enter_phone(settings.client_smoke_phone).submit()
     otp = OtpPage(fresh_client_login.page)
-    fresh_client_login.page.wait_for_timeout(2_000)
+    # Ждём появление OTP-инпута перед submit'ом
+    expect(otp.code_input).to_be_visible(timeout=settings.nav_timeout)
     otp.submit()
     _stays_on_login(fresh_client_login, settings)
 
@@ -108,9 +109,9 @@ def test_client_otp_invalid_format_stays(
 ) -> None:
     fresh_client_login.enter_phone(settings.client_smoke_phone).submit()
     otp = OtpPage(fresh_client_login.page)
-    fresh_client_login.page.wait_for_timeout(2_000)
+    expect(otp.code_input).to_be_visible(timeout=settings.nav_timeout)
     otp.enter_code(code).submit()
-    fresh_client_login.page.wait_for_timeout(1_500)
+    # фронт-валидация отбрасывает невалидный формат, форма должна остаться на /login
     _stays_on_login(fresh_client_login, settings)
 
 

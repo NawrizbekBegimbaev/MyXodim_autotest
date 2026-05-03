@@ -14,6 +14,14 @@ class OtpPage(BasePage):
         self._code_input: Locator = page.get_by_label(t("otp.input_label"))
         self._submit: Locator = page.get_by_role("button", name=t("otp.submit"))
 
+    @property
+    def code_input(self) -> Locator:
+        return self._code_input
+
+    @property
+    def submit_button(self) -> Locator:
+        return self._submit
+
     def enter_code(self, code: str) -> Self:
         self._code_input.fill(code)
         return self

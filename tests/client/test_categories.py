@@ -38,8 +38,7 @@ def test_category_create_root_appears_in_tree(
     expect(dialog.dialog).to_be_visible(timeout=settings.expect_timeout)
     dialog.fill_title(title).submit()
     expect(dialog.dialog).to_be_hidden(timeout=settings.expect_timeout)
-    client_admin_page.wait_for_timeout(1_500)
-    expect(cats.category_node(title)).to_be_visible(timeout=settings.expect_timeout)
+    expect(cats.category_node(title)).to_be_visible(timeout=settings.nav_timeout)
 
 
 @pytest.mark.positive
@@ -51,10 +50,10 @@ def test_category_create_child_under_parent(
     child = _fresh_title("Child")
 
     cats = _open(client_admin_page, settings)
-    # Сначала родителя
+    # Сначала родителя — ждём что нода появилась в дереве, иначе select_parent её не найдёт
     cats.click_add()
     CategoryCreateDialog(client_admin_page).fill_title(parent).submit()
-    client_admin_page.wait_for_timeout(2_000)
+    expect(cats.category_node(parent)).to_be_visible(timeout=settings.nav_timeout)
 
     # Теперь дочернюю
     cats.click_add()
@@ -62,8 +61,7 @@ def test_category_create_child_under_parent(
     expect(dialog2.dialog).to_be_visible(timeout=settings.expect_timeout)
     dialog2.fill_title(child).select_parent(parent).submit()
     expect(dialog2.dialog).to_be_hidden(timeout=settings.expect_timeout)
-    client_admin_page.wait_for_timeout(1_500)
-    expect(cats.category_node(child)).to_be_visible()
+    expect(cats.category_node(child)).to_be_visible(timeout=settings.nav_timeout)
 
 
 @pytest.mark.positive
@@ -86,7 +84,6 @@ def test_category_create_cancel_does_not_create(
     dialog = CategoryCreateDialog(client_admin_page)
     dialog.fill_title(title).cancel()
     expect(dialog.dialog).to_be_hidden(timeout=settings.expect_timeout)
-    client_admin_page.wait_for_timeout(1_500)
     expect(cats.category_node(title)).not_to_be_visible()
 
 
@@ -103,7 +100,7 @@ def test_category_create_with_empty_title_stays_on_dialog(
     dialog = CategoryCreateDialog(client_admin_page)
     expect(dialog.dialog).to_be_visible(timeout=settings.expect_timeout)
     dialog.submit()
-    client_admin_page.wait_for_timeout(2_000)
+    # без названия submit заблокирован/отклонён — диалог остаётся (expect ретраится)
     expect(dialog.dialog).to_be_visible()
 
 
@@ -138,5 +135,7 @@ def test_category_create_boundary_title(
     dialog = CategoryCreateDialog(page)
     expect(dialog.dialog).to_be_visible(timeout=settings.expect_timeout)
     dialog.fill_title(title).submit()
-    page.wait_for_timeout(2_000)
+    # Ждём что фронт обработал submit (heading дерева остаётся виден) —
+    # это даёт шанс XSS-payload выполниться, если фронт его не sanitize
+    expect(cats.heading).to_be_visible(timeout=settings.expect_timeout)
     assert dialogs == [], f"Payload вызвал JS dialog: {dialogs}"

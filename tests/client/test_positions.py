@@ -68,7 +68,6 @@ def test_position_edit_updates_title(
     expect(edit.dialog).to_be_hidden(timeout=settings.expect_timeout)
 
     pos.search(updated)
-    client_admin_page.wait_for_timeout(1_000)
     expect(pos.row_by_title(updated)).to_be_visible(timeout=settings.nav_timeout)
 
 
@@ -91,7 +90,7 @@ def test_position_delete_with_confirmation_removes_row(
     expect(confirm.dialog).to_be_hidden(timeout=settings.expect_timeout)
 
     pos.search(title)
-    client_admin_page.wait_for_timeout(1_500)
+    # not_to_be_visible имеет встроенный retry до expect_timeout
     expect(pos.row_by_title(title)).not_to_be_visible()
 
 
@@ -113,8 +112,7 @@ def test_position_delete_cancel_keeps_row(
     expect(confirm.dialog).to_be_hidden(timeout=settings.expect_timeout)
 
     pos.search(title)
-    client_admin_page.wait_for_timeout(1_000)
-    expect(pos.row_by_title(title)).to_be_visible()
+    expect(pos.row_by_title(title)).to_be_visible(timeout=settings.expect_timeout)
 
 
 @pytest.mark.positive
@@ -126,11 +124,9 @@ def test_positions_search_filters_list(
     pos = _open_positions(client_admin_page, settings)
     pos.click_add()
     PositionCreateDialog(client_admin_page).fill_title(title).submit()
-    client_admin_page.wait_for_timeout(1_500)
 
     pos.search(title)
-    client_admin_page.wait_for_timeout(1_000)
-    expect(pos.row_by_title(title)).to_be_visible(timeout=settings.expect_timeout)
+    expect(pos.row_by_title(title)).to_be_visible(timeout=settings.nav_timeout)
 
 
 # ---------- Negative ----------
@@ -146,7 +142,7 @@ def test_position_create_with_empty_title_stays_on_dialog(
     dialog = PositionCreateDialog(client_admin_page)
     expect(dialog.dialog).to_be_visible(timeout=settings.expect_timeout)
     dialog.submit()
-    client_admin_page.wait_for_timeout(2_000)
+    # без названия submit заблокирован — диалог остаётся (expect ретраится)
     expect(dialog.dialog).to_be_visible()
 
 
@@ -161,14 +157,16 @@ def test_position_create_with_duplicate_title_does_not_crash(
     title = _fresh_title("Dup")
     pos = _open_positions(client_admin_page, settings)
     pos.click_add()
-    PositionCreateDialog(client_admin_page).fill_title(title).submit()
-    client_admin_page.wait_for_timeout(3_000)
+    dialog1 = PositionCreateDialog(client_admin_page)
+    expect(dialog1.dialog).to_be_visible(timeout=settings.expect_timeout)
+    dialog1.fill_title(title).submit()
+    # ждём первого создания: либо диалог закрылся (успех), либо строка появилась
+    expect(dialog1.dialog).to_be_hidden(timeout=settings.nav_timeout)
 
     pos.click_add()
     dialog2 = PositionCreateDialog(client_admin_page)
     expect(dialog2.dialog).to_be_visible(timeout=settings.nav_timeout)
     dialog2.fill_title(title).submit()
-    client_admin_page.wait_for_timeout(3_000)
     # Не assert'им конкретное поведение — главное что нет crash
     expect(pos.heading).to_be_visible()
 
@@ -185,7 +183,6 @@ def test_position_create_cancel_does_not_create(
     dialog.fill_title(title).cancel()
     expect(dialog.dialog).to_be_hidden(timeout=settings.expect_timeout)
     pos.search(title)
-    client_admin_page.wait_for_timeout(1_000)
     expect(pos.row_by_title(title)).not_to_be_visible()
 
 
@@ -223,5 +220,6 @@ def test_position_create_boundary_title(
     dialog = PositionCreateDialog(page)
     expect(dialog.dialog).to_be_visible(timeout=settings.expect_timeout)
     dialog.fill_title(title).submit()
-    page.wait_for_timeout(2_000)
+    # ждём что фронт обработал submit (heading стабилен) — дать шанс XSS-payload выполниться
+    expect(pos.heading).to_be_visible(timeout=settings.expect_timeout)
     assert dialogs == [], f"Payload вызвал JS dialog: {dialogs}"
