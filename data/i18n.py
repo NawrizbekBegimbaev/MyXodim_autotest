@@ -151,8 +151,9 @@ _RU: Final[dict[str, str]] = {
     "client.documents.create_button": "Создать документ",
     "client.documents.create_page_title": "Создать новый документ",
     "client.documents.create_back": "Назад",
-    "client.documents.tab_template": "По шаблону",
-    "client.documents.tab_freeform": "Свободный",
+    # 2026-05-03: вкладки в wizard'е переехали на UZ (mixed-locale в RU UI).
+    "client.documents.tab_template": "Shablon bo'yicha",
+    "client.documents.tab_freeform": "Erkin",
     "client.documents.next_button": "Далее",
     "client.documents.cancel_button": "Отмена",
     "client.documents.field_title": "Заголовок",

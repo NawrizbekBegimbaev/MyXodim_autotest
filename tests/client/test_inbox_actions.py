@@ -37,7 +37,7 @@ def test_inbox_search_no_match_does_not_crash(
         pytest.param("Черновик", id="draft"),
         pytest.param("В работе", id="in-progress"),
         pytest.param("Завершён", id="completed"),
-        pytest.param("Отклонён", id="rejected"),
+        pytest.param("Отменён", id="cancelled"),
         pytest.param("Отправлен в 1С", id="sent-to-1c"),
     ],
 )

@@ -220,25 +220,38 @@ def test_company_detail_shows_integration_key(
 
 
 @pytest.mark.positive
-@allure.title("Detail: статус 'Активна' и счётчик пользователей")
+@allure.title("Detail: статус 'Активна' и stat-карточка 'Пользователи' с числом")
 def test_company_detail_shows_status_and_users_count(
-    detail_page: tuple[Page, dict[str, str]],
+    detail_page: tuple[Page, dict[str, str]], settings: Settings
 ) -> None:
+    """С 2026-05-03 detail-страница имеет 4 stat-карточки на табе Umumiy
+    (default): Статус / Пользователи / ИНН / Создана. Heading "Пользователи"
+    больше нет — это label в карточке."""
     page, _ = detail_page
-    expect(page.get_by_text("Активна").first).to_be_visible()
-    expect(page.get_by_role("heading", level=6).filter(has_text=re.compile(r"Пользователи"))).to_be_visible()
+    expect(page.get_by_text("Активна").first).to_be_visible(
+        timeout=settings.expect_timeout
+    )
+    # Карточка Пользователи: label "Пользователи" + число рядом
+    users_label = page.get_by_text("Пользователи", exact=True).first
+    expect(users_label).to_be_visible()
 
 
 @pytest.mark.positive
-@allure.title("Detail: таблица пользователей с колонками")
+@allure.title("Detail: таб 'Foydalanuvchilar' (UZ) показывает таблицу пользователей")
 def test_company_detail_shows_users_table(
-    detail_page: tuple[Page, dict[str, str]],
+    detail_page: tuple[Page, dict[str, str]], settings: Settings
 ) -> None:
+    """С 2026-05-03 пользователи — отдельный таб 'Foydalanuvchilar' (UZ).
+    Колонки тоже на UZ: F.I.O / Telefon / Holati / Qo'shilgan sana."""
     page, _ = detail_page
+    page.get_by_role("tab", name="Foydalanuvchilar", exact=True).click()
+    expect(
+        page.get_by_role("heading", level=6).filter(has_text="Foydalanuvchilar")
+    ).to_be_visible(timeout=settings.expect_timeout)
     table = page.get_by_role("table").last
-    for col in ["Пользователь", "Телефон", "Роль", "Статус"]:
+    for col in ["F.I.O", "Telefon", "Holati", "Qo'shilgan sana"]:
         expect(table.get_by_role("columnheader", name=col)).to_be_visible()
-    # admin row (тот что мы создали при анкоре): Якорь Тестовый
+    # admin row (созданный анкором): Якорь Тестовый
     expect(table.get_by_role("row").filter(has_text="Якорь Тестовый")).to_be_visible()
 
 

@@ -32,6 +32,7 @@ from pages.mock1c.setup_page import Mock1CPositionsPage, Mock1CSetupPage
 
 @pytest.mark.e2e
 @pytest.mark.serial
+@pytest.mark.creates_data
 @allure.title("§3 Главный E2E (no EIMZO): Admin → Mock 1C → Client UI документ-флоу")
 def test_admin_to_client_full_flow_no_eimzo(
     browser: Browser,
