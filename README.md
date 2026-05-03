@@ -3,6 +3,27 @@
 E2E автотесты для BusinessHub (Admin UI / Client UI / Mock 1C).
 Playwright + pytest, **UI-only** (никаких HTTP-вызовов из тестов — см. CLAUDE.md §13).
 
+## Профили: dev vs local
+
+| Файл | Среда | URLs |
+|---|---|---|
+| `.env` | активный (по умолчанию dev) | `dev-hub-*.greatmall.uz` |
+| `.env.local` | локальный docker-compose из core repo | `localhost:3040/3041/3042` |
+
+Переключение:
+
+```bash
+cp .env .env.dev.bak     # сохранить текущее
+cp .env.local .env       # переключиться на local
+# работа...
+mv .env.dev.bak .env     # вернуть dev
+```
+
+Локальный setup blocker'ы (на 2026-05-03):
+- BUG-015 — фронт шлёт phone без `+`, local-бэк strict отклоняет, dev lenient.
+- Test-юзеры из README локально не сидятся: только Super Admin (+998991234567)
+  через Liquibase. Client-side юзеры нужно создавать через Admin UI.
+
 ## Стек
 
 - Python 3.13

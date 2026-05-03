@@ -328,3 +328,12 @@ BUG-012  Major     [2026-04-30] POST /api/v1/integration/1c/job-titles/batch →
                    при "Отправить все должности" из Mock 1C. Найдено strict-guard.
 BUG-013  Minor     [2026-04-30] POST /api/v1/admin/tenants → 500 на ИНН=14 цифр
                    (на 10/15 цифр корректный 400). Найдено strict-guard.
+BUG-014  Minor     [2026-05-03] Mixed UZ/RU локаль на нескольких страницах в
+                   RU-контексте (Adminlar / Foydalanuvchilar / wizard вкладки
+                   Shablon bo'yicha-Erkin / Yopish-Yashirish и др.).
+BUG-015  Major     [2026-05-03] Admin UI шлёт phone без `+` префикса в
+                   POST /api/v1/admin/auth/login → "998991234567" вместо
+                   "+998991234567". Локальный бэк это отклоняет с 401, dev
+                   принимает (lenient). Воспроизведено через Playwright MCP
+                   network capture: request body "{\"phone\":\"998991234567\"...}".
+                   Фикс: либо фронт нормализует с `+998`, либо бэк lenient.
