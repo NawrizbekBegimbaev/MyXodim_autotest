@@ -135,7 +135,6 @@ def test_category_create_boundary_title(
     dialog = CategoryCreateDialog(page)
     expect(dialog.dialog).to_be_visible(timeout=settings.expect_timeout)
     dialog.fill_title(title).submit()
-    # Ждём что фронт обработал submit (heading дерева остаётся виден) —
-    # это даёт шанс XSS-payload выполниться, если фронт его не sanitize
-    expect(cats.heading).to_be_visible(timeout=settings.expect_timeout)
+    # XSS/SQLi: даём 2s браузеру выполнить пейлоад если фронт уязвим.
+    page.wait_for_timeout(2_000)
     assert dialogs == [], f"Payload вызвал JS dialog: {dialogs}"

@@ -220,6 +220,7 @@ def test_position_create_boundary_title(
     dialog = PositionCreateDialog(page)
     expect(dialog.dialog).to_be_visible(timeout=settings.expect_timeout)
     dialog.fill_title(title).submit()
-    # ждём что фронт обработал submit (heading стабилен) — дать шанс XSS-payload выполниться
-    expect(pos.heading).to_be_visible(timeout=settings.expect_timeout)
+    # XSS/SQLi: даём 2s браузеру выполнить пейлоад если фронт уязвим.
+    # Это не sync-wait, это таймер на потенциальное async выполнение.
+    page.wait_for_timeout(2_000)
     assert dialogs == [], f"Payload вызвал JS dialog: {dialogs}"
