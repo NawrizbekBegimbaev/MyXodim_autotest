@@ -286,9 +286,11 @@ def client_admin_state(
         settings.client_smoke_phone
     ).submit()
     OtpPage(page).enter_code(TEST_OTP).submit()
-    page.wait_for_url("**/tenant-select", timeout=settings.nav_timeout)
-    SelectOrganizationPage(page).select(settings.client_smoke_org)
-    page.wait_for_url("**/dashboard", timeout=settings.nav_timeout)
+    # После OTP две развилки: ≥2 орг → /tenant-select; одна орг → сразу /documents
+    page.wait_for_load_state("networkidle", timeout=settings.nav_timeout)
+    if "tenant-select" in page.url:
+        SelectOrganizationPage(page).select(settings.client_smoke_org)
+        page.wait_for_load_state("networkidle", timeout=settings.nav_timeout)
     ctx.storage_state(path=state_path)
     ctx.close()
     return state_path
