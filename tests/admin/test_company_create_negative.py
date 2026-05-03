@@ -68,6 +68,40 @@ def _expect_form_stays(page_object: CreateCompanyPage, settings: Settings) -> No
     expect(success_heading).not_to_be_visible()
 
 
+def _submit_and_assert_response(
+    create: CreateCompanyPage,
+    settings: Settings,
+    expected_status: int,
+    expected_code: str | None = None,
+) -> None:
+    """Submit формы + перехват POST /admin/tenants + ассерт на status и code.
+
+    Network-assertion закрывает класс BUG-006: тесты раньше проверяли только
+    "форма осталась", но если бэк начнёт пропускать дубль (200) — тест-провайдер
+    бы заметил это только через UI, а UI молчит (BUG-006). Теперь explicit ассерт.
+    """
+    page = create.page
+    with page.expect_response(
+        lambda r: "/api/v1/admin/tenants" in r.url
+        and r.request.method == "POST"
+        and not r.url.endswith("/enable")
+        and not r.url.endswith("/disable"),
+        timeout=settings.nav_timeout,
+    ) as resp_info:
+        create.submit()
+    resp = resp_info.value
+    assert resp.status == expected_status, (
+        f"Ожидали {expected_status} от POST /admin/tenants, "
+        f"получили {resp.status}. Body: {resp.text()[:300]}"
+    )
+    if expected_code is not None:
+        body = resp.json()
+        assert body.get("code") == expected_code, (
+            f"Ожидали code={expected_code!r}, получили {body.get('code')!r}. "
+            f"Body: {body}"
+        )
+
+
 # ---------- Backend duplicate-checks (409) — фронт молчит из-за BUG-006 ----------
 
 
@@ -79,7 +113,7 @@ def test_company_create_with_duplicate_inn_stays_on_form(
     create, _ = _open_form_filled(
         super_admin_context, settings, overrides={"inn": anchor_company["inn"]}
     )
-    create.submit()
+    _submit_and_assert_response(create, settings, expected_status=409, expected_code="INN_EXISTS")
     _expect_form_stays(create, settings)
 
 
@@ -91,7 +125,7 @@ def test_company_create_with_duplicate_slug_stays_on_form(
     create, _ = _open_form_filled(
         super_admin_context, settings, overrides={"slug": anchor_company["slug"]}
     )
-    create.submit()
+    _submit_and_assert_response(create, settings, expected_status=409, expected_code="SLUG_EXISTS")
     _expect_form_stays(create, settings)
 
 
@@ -105,7 +139,9 @@ def test_company_create_with_duplicate_admin_phone_stays_on_form(
         settings,
         overrides={"phone_local": anchor_company["phone_local"]},
     )
-    create.submit()
+    _submit_and_assert_response(
+        create, settings, expected_status=409, expected_code="PHONE_ADMIN_EXISTS"
+    )
     _expect_form_stays(create, settings)
 
 
@@ -117,15 +153,21 @@ def test_company_create_with_duplicate_pinfl_stays_on_form(
     create, _ = _open_form_filled(
         super_admin_context, settings, overrides={"pinfl": anchor_company["pinfl"]}
     )
-    create.submit()
+    _submit_and_assert_response(
+        create, settings, expected_status=409, expected_code="PINFL_EXISTS"
+    )
     _expect_form_stays(create, settings)
 
 
 @pytest.mark.negative
-@allure.title("UC-4.1 neg: без ПИНФЛ → 400 constraint-violations, форма остаётся")
+@allure.title("UC-4.1 neg: без ПИНФЛ → submit заблокирован фронт-валидацией")
 def test_company_create_without_pinfl_stays_on_form(
     super_admin_context: BrowserContext, settings: Settings
 ) -> None:
+    """После фикса BUG-002 ПИНФЛ — required на фронте: submit не отправляется
+    вовсе (клиентская валидация). Поэтому network-assert не применим — POST
+    не летит, ждём только что форма не уехала на success.
+    """
     create, _ = _open_form_filled(super_admin_context, settings, overrides={"pinfl": ""})
     create.submit()
     _expect_form_stays(create, settings)
@@ -137,7 +179,7 @@ def test_company_create_with_letters_in_inn_stays_on_form(
     super_admin_context: BrowserContext, settings: Settings
 ) -> None:
     create, _ = _open_form_filled(super_admin_context, settings, overrides={"inn": "abcdefghi"})
-    create.submit()
+    _submit_and_assert_response(create, settings, expected_status=400)
     _expect_form_stays(create, settings)
 
 
