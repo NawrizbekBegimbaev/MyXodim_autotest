@@ -26,6 +26,10 @@ def _fresh_route() -> str:
     return f"{E2E_PREFIX} CtorRoute {secrets.token_hex(3)}"
 
 
+# Все тесты в файле мутируют состояние через UI (CRUD-формы).
+pytestmark = pytest.mark.creates_data
+
+
 @pytest.mark.positive
 @allure.title("Routes constructor: click default step → открывается panel 'Настройки шага'")
 def test_route_step_click_opens_settings_panel(

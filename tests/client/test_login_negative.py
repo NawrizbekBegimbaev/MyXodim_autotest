@@ -156,7 +156,14 @@ def test_client_dashboard_refresh_keeps_session(
         settings.client_smoke_phone
     ).submit()
     OtpPage(page).enter_code(TEST_OTP).submit()
-    page.wait_for_url("**/tenant-select", timeout=settings.nav_timeout)
+    # Юзер с одной орг → /documents; ≥2 орг → /tenant-select. Ждём любой.
+    page.wait_for_url(
+        re.compile(r"/(tenant-select|documents|dashboard)"),
+        timeout=settings.nav_timeout,
+    )
     page.reload(wait_until="networkidle")
-    expect(page).to_have_url(re.compile(r"/(tenant-select|dashboard)"), timeout=settings.nav_timeout)
+    expect(page).to_have_url(
+        re.compile(r"/(tenant-select|documents|dashboard)"),
+        timeout=settings.nav_timeout,
+    )
     ctx.close()

@@ -23,6 +23,10 @@ def _fresh_title() -> str:
     return f"{E2E_PREFIX} Role {secrets.token_hex(3)}"
 
 
+# Все тесты в файле мутируют состояние через UI (CRUD-формы).
+pytestmark = pytest.mark.creates_data
+
+
 @pytest.mark.positive
 @allure.title("Roles: создание роли → видна в списке после reload")
 def test_role_create_appears_in_list_after_reload(

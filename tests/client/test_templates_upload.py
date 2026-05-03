@@ -31,6 +31,10 @@ def _fresh_title() -> str:
     return f"{E2E_PREFIX} Tmpl {secrets.token_hex(3)}"
 
 
+# Все тесты в файле мутируют состояние через UI (CRUD-формы).
+pytestmark = pytest.mark.creates_data
+
+
 @pytest.mark.positive
 @allure.title("Templates step 2: 'Пропустить' закрывает upload-диалог")
 def test_template_upload_skip_closes_dialog(

@@ -33,6 +33,10 @@ def _expect_dialog_stays(dialog: MemberCreateDialog, settings: Settings) -> None
     expect(dialog.dialog).to_be_visible(timeout=settings.expect_timeout)
 
 
+# Все тесты в файле мутируют состояние через UI (CRUD-формы).
+pytestmark = pytest.mark.creates_data
+
+
 @pytest.mark.negative
 @allure.title("UC-3.6 neg: дубль телефона → 409, диалог остаётся + error отображается")
 def test_member_create_with_duplicate_phone_shows_error(

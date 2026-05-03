@@ -55,6 +55,10 @@ def _create_doc_with_route(
     return page.url
 
 
+# Все тесты в файле мутируют состояние через UI (CRUD-формы).
+pytestmark = pytest.mark.creates_data
+
+
 @pytest.mark.positive
 @allure.title(
     "Real doc: создание + отправка на маршрут → редирект на detail с DOC-N в работе"

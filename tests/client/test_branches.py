@@ -23,6 +23,10 @@ def _fresh_title(prefix: str = "Br") -> str:
     return f"{E2E_PREFIX} {prefix} {secrets.token_hex(3)}"
 
 
+# Все тесты в файле мутируют состояние через UI (CRUD-формы).
+pytestmark = pytest.mark.creates_data
+
+
 @pytest.mark.positive
 @allure.title("Branches: создание филиала под head-office")
 def test_branch_create_appears_in_tree(

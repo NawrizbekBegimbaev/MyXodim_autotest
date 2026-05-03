@@ -29,6 +29,10 @@ def _fresh_name() -> str:
     return f"{E2E_PREFIX} Route {secrets.token_hex(3)}"
 
 
+# Все тесты в файле мутируют состояние через UI (CRUD-формы).
+pytestmark = pytest.mark.creates_data
+
+
 @pytest.mark.positive
 @allure.title("Routes: создание маршрута с дефолтным 1 шагом → виден в списке")
 def test_route_create_with_default_step_appears_in_list(

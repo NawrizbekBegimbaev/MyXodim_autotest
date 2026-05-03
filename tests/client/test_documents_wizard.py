@@ -27,6 +27,10 @@ def _open_wizard(page: Page, settings: Settings) -> DocumentCreateWizardPage:
     return wizard
 
 
+# Все тесты в файле мутируют состояние через UI (CRUD-формы).
+pytestmark = pytest.mark.creates_data
+
+
 @pytest.mark.positive
 @allure.title("Doc wizard: step 1 — выбор шаблона + заполнение → переход на step 2")
 def test_doc_wizard_step1_template_to_step2(

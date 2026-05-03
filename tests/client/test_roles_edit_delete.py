@@ -18,6 +18,10 @@ def _open_roles(page: Page, settings: Settings) -> RolesPage:
     return rl
 
 
+# Все тесты в файле мутируют состояние через UI (CRUD-формы).
+pytestmark = pytest.mark.creates_data
+
+
 @pytest.mark.positive
 @allure.title("Roles edit: клик 'Редактировать' открывает страницу с permissions matrix")
 def test_role_edit_opens_permissions_page(
