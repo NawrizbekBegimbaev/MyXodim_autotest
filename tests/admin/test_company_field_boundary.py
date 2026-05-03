@@ -58,7 +58,7 @@ def _expect_no_success(create: CreateCompanyPage, settings: Settings) -> None:
     """Submit + проверка что success-heading НЕ появился, форма остаётся."""
     create.submit()
     page = create.page
-    page.wait_for_timeout(2_500)
+    # form heading должен оставаться, success-heading не появляется (expect.not_to_be_visible ретраится)
     expect(create.page_heading).to_be_visible(timeout=settings.expect_timeout)
     expect(page.get_by_role("heading", name="Компания создана", level=5)).not_to_be_visible()
 

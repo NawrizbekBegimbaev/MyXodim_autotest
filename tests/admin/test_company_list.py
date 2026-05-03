@@ -20,9 +20,7 @@ def _open_list(ctx: BrowserContext, settings: Settings) -> OrganizationsPage:
     page = ctx.new_page()
     # Сначала dashboard — фронт инициализирует state там, /tenants без этого "чистый" не грузится
     page.goto(f"{settings.admin_url}/dashboard", wait_until="networkidle")
-    page.wait_for_timeout(1_500)
     page.goto(f"{settings.admin_url}/tenants", wait_until="networkidle")
-    page.wait_for_timeout(2_500)
     orgs = OrganizationsPage(page)
     expect(orgs.heading).to_be_visible(timeout=settings.nav_timeout)
     expect(orgs.table.get_by_role("row").nth(1)).to_be_visible(timeout=settings.nav_timeout)

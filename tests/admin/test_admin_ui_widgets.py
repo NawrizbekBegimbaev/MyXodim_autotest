@@ -14,7 +14,6 @@ from config.settings import Settings
 def _open_dashboard(ctx: BrowserContext, settings: Settings) -> Page:
     page = ctx.new_page()
     page.goto(f"{settings.admin_url}/dashboard", wait_until="networkidle")
-    page.wait_for_timeout(1_000)
     expect(page.get_by_role("heading", name="Дашборд", level=4)).to_be_visible(
         timeout=settings.nav_timeout
     )
@@ -43,8 +42,7 @@ def test_theme_toggle_exists(
     )
     expect(toggle.first).to_be_visible(timeout=settings.expect_timeout)
     toggle.first.click()
-    page.wait_for_timeout(500)
-    # Дашборд остался доступен
+    # Дашборд остался доступен (expect ретраится пока тема переключается)
     expect(page.get_by_role("heading", name="Дашборд", level=4)).to_be_visible()
     # Откат
     page.get_by_role(
@@ -61,8 +59,7 @@ def test_sidebar_collapse_button_clickable(
     btn = page.get_by_role("button", name="collapse sidebar")
     expect(btn).to_be_visible(timeout=settings.expect_timeout)
     btn.click()
-    page.wait_for_timeout(500)
-    # Дашборд остаётся доступным
+    # Дашборд остаётся доступным (expect ретраится пока sidebar схлопывается)
     expect(page.get_by_role("heading", name="Дашборд", level=4)).to_be_visible()
 
 

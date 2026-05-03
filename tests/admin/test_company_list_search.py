@@ -13,9 +13,7 @@ from pages.admin.organizations_page import OrganizationsPage
 def _open_list(ctx: BrowserContext, settings: Settings) -> OrganizationsPage:
     page = ctx.new_page()
     page.goto(f"{settings.admin_url}/dashboard", wait_until="networkidle")
-    page.wait_for_timeout(1_000)
     page.goto(f"{settings.admin_url}/tenants", wait_until="networkidle")
-    page.wait_for_timeout(2_500)
     orgs = OrganizationsPage(page)
     expect(orgs.heading).to_be_visible(timeout=settings.nav_timeout)
     expect(orgs.table.get_by_role("row").nth(1)).to_be_visible(timeout=settings.nav_timeout)
@@ -110,5 +108,7 @@ def test_search_special_payload_does_not_execute(
     page.on("dialog", on_dialog)
 
     orgs.search(query)
-    page.wait_for_timeout(1_500)
+    # Ждём что фронт обработал запрос (empty-state либо отфильтрованный список) —
+    # auto-retrying expect синхронизирует, после чего проверяем что не было JS dialog'а
+    expect(orgs.heading).to_be_visible(timeout=settings.expect_timeout)
     assert dialog_seen == [], f"XSS/SQL payload вызвал dialog: {dialog_seen}"
