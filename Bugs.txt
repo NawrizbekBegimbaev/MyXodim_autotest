@@ -315,6 +315,125 @@ Priority:           P2
 
 
 ================================================================================
+BUG-014: Mixed UZ/RU локаль — UZ-вкрапления на страницах в RU-контексте
+================================================================================
+
+Severity:           Minor (UX, не функциональный блокер)
+Priority:           P3
+Компонент:          Frontend (admin-ui + client-ui — i18n)
+Найдено:            2026-05-03 при реконе UI drift через Playwright MCP
+
+Описание:
+    На стенде с локалью RU (locale="ru-RU" в browser context, переключатель
+    языка показан в "ru") некоторые элементы UI рендерятся на UZ. Это либо
+    забытые `t()` вызовы, либо хардкод UZ-строк, либо дефолт другой локали.
+
+Подтверждённые места:
+
+Admin UI:
+    - /admins
+        * heading "Adminlar" вместо "Администраторы"
+        * подпись "Platforma administratorlari"
+        * кнопка "Yangi admin"
+        * search "Qidirish..."
+        * колонки "Ism | Telefon | Holat | Yaratilgan"
+    - /tenants/{id} detail
+        * табы "Umumiy" / "Filiallar" / "Foydalanuvchilar"
+        * heading секции "1C integratsiyasi"
+        * кнопка "1C kalitini regenerate qilish"
+        * колонки таблицы юзеров: "F.I.O | Telefon | Holati | Qo'shilgan sana"
+
+Client UI:
+    - /documents/create wizard
+        * вкладки "Shablon bo'yicha" / "Erkin" (вместо "По шаблону" / "Свободный")
+        * подпись формы "Formani to'ldiring va kelishishga yuboring"
+        * кнопки "Ichki" / "Tashqi"
+        * "+ Fayl yuklash" / "+ Tizimdan hujjat" / "Ilovalar"
+        * "Kelishishga yuborish"
+        * "Marshrut nomi"
+    - sidebar header кнопки "Yopish" / "Yashirish"
+
+Доказательство:
+    Снимки aria-snapshot из Playwright MCP recon 2026-05-03 в файле
+    recon/2026-05-03/UI_DRIFT.md.
+
+Рекомендация:
+    Аудит i18n-ресурсов admin-ui и client-ui. Все user-facing строки —
+    через словарь `t("...")`, не хардкод. Дефолт RU, переключатель — UZ.
+    Текущий статус показывает что часть строк не локализована вообще
+    (UZ остаётся независимо от выбранного языка).
+
+
+================================================================================
+BUG-015: Admin UI Login отправляет phone БЕЗ `+` префикса (фронт-баг)
+================================================================================
+
+Severity:           Major (блокирует логин на стандартном бэке)
+Priority:           P1
+Компонент:          Frontend admin-ui (login form submit)
+Найдено:            2026-05-03 при попытке поднять local docker-compose +
+                    прогнать smoke-тесты
+
+Описание:
+    На странице /login форма имеет visual-префикс "+998" перед textbox'ом,
+    юзер вводит локальные 9 цифр. При submit фронт собирает phone, но
+    префиксирует ТОЛЬКО `998` (без знака `+`).
+
+    Backend на dev принимает оба формата (lenient), на local — strict
+    отклоняет с 401 "Bad credentials".
+
+Шаги воспроизведения:
+    1. Поднять local docker-compose из core repo:
+       cd infra/local && docker compose up -d
+    2. Запустить backend: cd backend && ./gradlew bootRun --args='--spring.profiles.active=local'
+    3. Запустить admin-ui: cd frontend/admin-ui && pnpm dev
+    4. Открыть http://localhost:3041/login
+    5. Ввести phone "991234567" (без префикса), пароль "admin123" (seed-юзер)
+    6. Нажать "Войти"
+
+Ожидаемый результат:
+    POST /api/v1/admin/auth/login со {"phone":"+998991234567","password":"admin123"}
+    → 200 OK + JWT.
+
+Фактический результат (через Playwright MCP browser_network_requests):
+    POST /api/v1/admin/auth/login со {"phone":"998991234567","password":"admin123"}
+    → 401 Unauthorized.
+
+Прямой контр-тест (тот же браузер, та же страница, через JS fetch):
+    fetch('http://localhost:8040/api/v1/admin/auth/login', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({phone: '+998991234567', password: 'admin123'})
+    })
+    → 200 OK (исключает CORS / network как причину).
+
+Доказательство:
+    network capture (Playwright MCP, страница http://localhost:3041/login):
+        [POST] http://localhost:8040/api/v1/admin/auth/login => [401]
+        Request body: {"phone":"998991234567","password":"admin123"}
+        [POST] http://localhost:8040/api/v1/admin/auth/login => [200]
+        Request body: {"phone":"+998991234567","password":"admin123"}
+
+Влияние:
+    1. Невозможно поднять local окружение для разработки/тестов без хака
+       или фикса с одной из сторон.
+    2. На dev среде проблема замаскирована lenient parsing'ом — но это
+       сама по себе плохая практика (нужно нормализовать формат).
+    3. То же поведение скорее всего у client-ui /login (OTP request) —
+       не проверено ещё.
+
+Рекомендация:
+    Frontend (предпочтительно): нормализовать phone в submit handler —
+    `+998` + локальные 9 цифр перед отправкой на бэк.
+    ИЛИ
+    Backend: нормализовать phone на входе валидатора — стрипать `+`,
+    добавлять обратно для каноничного хранения. Тогда `998991234567` и
+    `+998991234567` оба валидны.
+
+    Желательно — оба (defense in depth).
+
+
+================================================================================
 Сводка
 ================================================================================
 
