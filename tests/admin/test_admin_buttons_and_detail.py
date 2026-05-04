@@ -237,19 +237,19 @@ def test_company_detail_shows_status_and_users_count(
 
 
 @pytest.mark.positive
-@allure.title("Detail: таб 'Foydalanuvchilar' (UZ) показывает таблицу пользователей")
+@allure.title("Detail: таб 'Пользователи' показывает таблицу с колонками RU")
 def test_company_detail_shows_users_table(
     detail_page: tuple[Page, dict[str, str]], settings: Settings
 ) -> None:
-    """С 2026-05-03 пользователи — отдельный таб 'Foydalanuvchilar' (UZ).
-    Колонки тоже на UZ: F.I.O / Telefon / Holati / Qo'shilgan sana."""
+    """С 2026-05-04 (BUG-014 fix) tab переведён на RU.
+    Колонки: Ф.И.О. / Телефон / Статус / Дата добавления."""
     page, _ = detail_page
-    page.get_by_role("tab", name="Foydalanuvchilar", exact=True).click()
+    page.get_by_role("tab", name="Пользователи", exact=True).click()
     expect(
-        page.get_by_role("heading", level=6).filter(has_text="Foydalanuvchilar")
+        page.get_by_role("heading", level=6).filter(has_text="Пользователи")
     ).to_be_visible(timeout=settings.expect_timeout)
     table = page.get_by_role("table").last
-    for col in ["F.I.O", "Telefon", "Holati", "Qo'shilgan sana"]:
+    for col in ["Ф.И.О.", "Телефон", "Статус", "Дата добавления"]:
         expect(table.get_by_role("columnheader", name=col)).to_be_visible()
     # admin row (созданный анкором): Якорь Тестовый
     expect(table.get_by_role("row").filter(has_text="Якорь Тестовый")).to_be_visible()

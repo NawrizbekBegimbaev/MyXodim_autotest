@@ -1,6 +1,7 @@
 """Переключатели локали Admin/Client UI.
 
-Admin UI: button с aria-label "change language", текст "ru"/"uz".
+Admin UI: button с aria-label "Сменить язык" (или "Tilni o'zgartirish" на UZ),
+          текст "ru"/"uz".
 Client UI: button с aria-label "Switch language to O'zbekcha" / "...to Русский",
             текст "RU"/"UZ".
 
@@ -9,17 +10,24 @@ Mock 1C: отдельный тумблер UZ-only кнопки в шапке (�
 
 from __future__ import annotations
 
+import re
 from typing import Self
 
 from playwright.sync_api import Locator, Page
 
 
 class AdminLocaleSwitcher:
-    """Toggle между ru/uz в Admin UI."""
+    """Toggle между ru/uz в Admin UI.
+
+    aria-label кнопки переведён на RU после i18n-batch (был "change language",
+    стал "Сменить язык"). Локаторим по обоим.
+    """
+
+    _ARIA_RE = re.compile(r"^(Сменить язык|Tilni o'zgartirish|change language)$")
 
     def __init__(self, page: Page) -> None:
         self.page = page
-        self._button: Locator = page.get_by_role("button", name="change language")
+        self._button: Locator = page.get_by_role("button", name=self._ARIA_RE)
 
     @property
     def button(self) -> Locator:

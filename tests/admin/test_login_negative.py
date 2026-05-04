@@ -59,22 +59,26 @@ def test_admin_login_with_nonexistent_phone_shows_error_alert(
 
 
 @pytest.mark.negative
-@allure.title("Login neg: буквы в телефоне → alert")
+@allure.title("Login neg: буквы в телефоне → submit заблокирован")
 def test_admin_login_with_letters_in_phone_shows_error_alert(
     fresh_login_page: AdminLoginPage, settings: Settings
 ) -> None:
+    """После BUG-015 fix фронт нормализует phone через digitsOnly:
+    'abcdefghi' → '' → submit заблокирован client-side валидацией.
+    POST не летит, alert не появляется — URL остаётся /login.
+    """
     fresh_login_page.login("abcdefghi", "anything")
-    expect(fresh_login_page.invalid_creds_alert()).to_be_visible(timeout=settings.expect_timeout)
     _expect_stays_on_login(fresh_login_page, settings)
 
 
 @pytest.mark.negative
-@allure.title("Login neg: слишком короткий телефон → alert")
+@allure.title("Login neg: слишком короткий телефон → submit заблокирован")
 def test_admin_login_with_short_phone_shows_error_alert(
     fresh_login_page: AdminLoginPage, settings: Settings
 ) -> None:
+    """Frontend Zod-схема требует ровно 9 цифр (UZ_PHONE_BODY=/^\\d{9}$/).
+    '123' → невалидно → submit blocked, alert не появляется."""
     fresh_login_page.login("123", "anything")
-    expect(fresh_login_page.invalid_creds_alert()).to_be_visible(timeout=settings.expect_timeout)
     _expect_stays_on_login(fresh_login_page, settings)
 
 

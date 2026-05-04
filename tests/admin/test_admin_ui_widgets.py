@@ -20,34 +20,40 @@ def _open_dashboard(ctx: BrowserContext, settings: Settings) -> Page:
     return page
 
 
+# После i18n-batch на dev aria-label кнопок переведены на RU.
+_LANG_TOGGLE_RE = re.compile(
+    r"^(Сменить язык|Tilni o'zgartirish|change language)$"
+)
+_THEME_TOGGLE_RE = re.compile(
+    r"^(Тёмная тема|Светлая тема|Qorong'i mavzu|Yorug' mavzu|"
+    r"(dark|light)\s+mode|Toggle theme)$",
+    re.IGNORECASE,
+)
+
+
 @pytest.mark.positive
 @allure.title("Widgets: переключатель языка виден на дашборде")
 def test_language_toggle_visible(
     super_admin_live_context: BrowserContext, settings: Settings
 ) -> None:
     page = _open_dashboard(super_admin_live_context, settings)
-    toggle = page.get_by_role("button", name="change language")
+    toggle = page.get_by_role("button", name=_LANG_TOGGLE_RE)
     expect(toggle).to_be_visible(timeout=settings.expect_timeout)
 
 
 @pytest.mark.positive
-@allure.title("Widgets: переключатель темы (toggle theme/dark mode) существует")
+@allure.title("Widgets: переключатель темы существует и переключается")
 def test_theme_toggle_exists(
     super_admin_live_context: BrowserContext, settings: Settings
 ) -> None:
     page = _open_dashboard(super_admin_live_context, settings)
-    # Имя кнопки может быть "dark mode" или "light mode" в зависимости от текущей темы
-    toggle = page.get_by_role(
-        "button", name=re.compile(r"(dark|light)\s+mode|Toggle theme", re.IGNORECASE)
-    )
+    toggle = page.get_by_role("button", name=_THEME_TOGGLE_RE)
     expect(toggle.first).to_be_visible(timeout=settings.expect_timeout)
     toggle.first.click()
-    # Дашборд остался доступен (expect ретраится пока тема переключается)
+    # Дашборд остался доступен после переключения темы
     expect(page.get_by_role("heading", name="Дашборд", level=4)).to_be_visible()
     # Откат
-    page.get_by_role(
-        "button", name=re.compile(r"(dark|light)\s+mode|Toggle theme", re.IGNORECASE)
-    ).first.click()
+    page.get_by_role("button", name=_THEME_TOGGLE_RE).first.click()
 
 
 @pytest.mark.positive
