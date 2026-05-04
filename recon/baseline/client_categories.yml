@@ -1,0 +1,80 @@
+- heading "TeamQa" [level=6]
+- text: STIR 983154321
+- button "Yopish"
+- button "Yashirish"
+- region "scrollable content":
+  - navigation:
+    - list:
+      - listitem:
+        - list:
+          - listitem:
+            - link "Главная":
+              - /url: /dashboard
+      - listitem:
+        - list:
+          - listitem:
+            - button "Документооборот"
+      - listitem:
+        - list:
+          - listitem:
+            - button "Оргструктура"
+      - listitem:
+        - list:
+          - listitem:
+            - button "Настройки"
+- separator
+- button "Switch language to O'zbekcha": RU
+- button "Toggle theme"
+- separator
+- button "User menu":
+  - text: +
+  - paragraph: "+998913030519"
+  - text: Администратор
+- main:
+  - heading "Категории" [level=4]
+  - paragraph: 10 категорий, 0 документов
+  - button "Добавить категорию"
+  - paragraph: "'; DROP TABLE categories; --"
+  - heading "0" [level=5]
+  - text: Документы
+  - paragraph: <script>alert(1)</script>
+  - heading "0" [level=5]
+  - text: Документы
+  - paragraph: "[E2E] Parent 07be10"
+  - heading "1" [level=5]
+  - text: Документы
+  - paragraph: "[E2E] Cat fa563f"
+  - heading "0" [level=5]
+  - text: Документы
+  - paragraph: "'; DROP TABLE categories; --"
+  - heading "0" [level=5]
+  - text: Документы
+  - paragraph: <script>alert(1)</script>
+  - heading "0" [level=5]
+  - text: Документы
+  - paragraph: "'; DROP TABLE categories; --"
+  - heading "0" [level=5]
+  - text: Документы
+  - paragraph: <script>alert(1)</script>
+  - heading "0" [level=5]
+  - text: Документы
+  - heading "Древовидная структура" [level=6]
+  - paragraph: "'; DROP TABLE categories; --"
+  - button "Редактировать"
+  - paragraph: <script>alert(1)</script>
+  - button "Редактировать"
+  - paragraph: "[E2E] Parent 07be10"
+  - button "Редактировать"
+  - paragraph: "[E2E] Child 19b49f"
+  - button "Редактировать"
+  - paragraph: "[E2E] Cat fa563f"
+  - button "Редактировать"
+  - paragraph: "'; DROP TABLE categories; --"
+  - button "Редактировать"
+  - paragraph: <script>alert(1)</script>
+  - button "Редактировать"
+  - paragraph: "'; DROP TABLE categories; --"
+  - button "Редактировать"
+  - paragraph: <script>alert(1)</script>
+  - button "Редактировать"
+- region "Notifications alt+T"

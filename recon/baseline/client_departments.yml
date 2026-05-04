@@ -1,0 +1,101 @@
+- heading "TeamQa" [level=6]
+- text: STIR 983154321
+- button "Yopish"
+- button "Yashirish"
+- region "scrollable content":
+  - navigation:
+    - list:
+      - listitem:
+        - list:
+          - listitem:
+            - link "Главная":
+              - /url: /dashboard
+      - listitem:
+        - list:
+          - listitem:
+            - button "Документооборот"
+      - listitem:
+        - list:
+          - listitem:
+            - button "Оргструктура"
+            - list:
+              - listitem:
+                - link "Пользователи":
+                  - /url: /members
+              - listitem:
+                - link "Филиалы":
+                  - /url: /branches
+              - listitem:
+                - link "Отделы":
+                  - /url: /departments
+              - listitem:
+                - link "Должности":
+                  - /url: /positions
+              - listitem:
+                - link "Штатные позиции":
+                  - /url: /org-positions
+      - listitem:
+        - list:
+          - listitem:
+            - button "Настройки"
+- separator
+- button "Switch language to O'zbekcha": RU
+- button "Toggle theme"
+- separator
+- button "User menu":
+  - text: +
+  - paragraph: "+998913030519"
+  - text: Администратор
+- main:
+  - heading "Отделы" [level=4]
+  - paragraph: Всего 2 отделов
+  - button "Добавить отдел"
+  - textbox "Поиск по названию..."
+  - text: Филиал
+  - combobox "Филиал"
+  - text: Источник
+  - combobox "Источник"
+  - table:
+    - rowgroup:
+      - row "Название отдела Филиал Родитель Пользователи Источник Действия":
+        - columnheader "Название отдела"
+        - columnheader "Филиал"
+        - columnheader "Родитель"
+        - columnheader "Пользователи"
+        - columnheader "Источник"
+        - columnheader "Действия"
+    - rowgroup:
+      - row "Отдел продал — Основной 0 Вручную Руководящая позиция Редактировать Удалить":
+        - cell "Отдел продал":
+          - paragraph: Отдел продал
+        - cell "—":
+          - paragraph: —
+        - cell "Основной":
+          - paragraph: Основной
+        - cell "0":
+          - paragraph: "0"
+        - cell "Вручную"
+        - cell "Руководящая позиция Редактировать Удалить":
+          - button "Руководящая позиция"
+          - button "Редактировать"
+          - button "Удалить"
+      - row "Кадровый отдел — Основной 0 Вручную Руководящая позиция Редактировать Удалить":
+        - cell "Кадровый отдел":
+          - paragraph: Кадровый отдел
+        - cell "—":
+          - paragraph: —
+        - cell "Основной":
+          - paragraph: Основной
+        - cell "0":
+          - paragraph: "0"
+        - cell "Вручную"
+        - cell "Руководящая позиция Редактировать Удалить":
+          - button "Руководящая позиция"
+          - button "Редактировать"
+          - button "Удалить"
+  - paragraph: "Записей на странице:"
+  - 'combobox "Записей на странице: 25"': "25"
+  - paragraph: 1–2 из 2
+  - button "Go to previous page" [disabled]
+  - button "Go to next page" [disabled]
+- region "Notifications alt+T"

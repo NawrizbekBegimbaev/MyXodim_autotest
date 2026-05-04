@@ -15,4 +15,9 @@ playwright-report/
 .DS_Store
 *.egg-info/
 .phone_pool/
-recon/
+# recon/ — recon-снапшоты, кроме baseline для periodic_recon.py
+recon/*
+!recon/baseline/
+recon/baseline/*.yml.new
+
+tests/visual/artifacts/

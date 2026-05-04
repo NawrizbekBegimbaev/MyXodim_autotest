@@ -1,0 +1,79 @@
+- heading "TeamQa" [level=6]
+- text: STIR 983154321
+- button "Yopish"
+- button "Yashirish"
+- region "scrollable content":
+  - navigation:
+    - list:
+      - listitem:
+        - list:
+          - listitem:
+            - link "Главная":
+              - /url: /dashboard
+      - listitem:
+        - list:
+          - listitem:
+            - button "Документооборот"
+            - list:
+              - listitem:
+                - link "Требуют подписи":
+                  - /url: /inbox
+              - listitem:
+                - link "Мои документы":
+                  - /url: /documents
+              - listitem:
+                - link "Мои заявки":
+                  - /url: /inbox/#requests
+                  - text: Мои заявки Скоро
+              - listitem:
+                - link "Шаблоны":
+                  - /url: /templates
+      - listitem:
+        - list:
+          - listitem:
+            - button "Оргструктура"
+      - listitem:
+        - list:
+          - listitem:
+            - button "Настройки"
+- separator
+- button "Switch language to O'zbekcha": RU
+- button "Toggle theme"
+- separator
+- button "User menu":
+  - text: +
+  - paragraph: "+998913030519"
+  - text: Администратор
+- main:
+  - heading "Требуют подписи" [level=4]
+  - paragraph: Документы, ожидающие вашего действия
+  - textbox "Поиск по заголовку или номеру..."
+  - tablist:
+    - tab "Все" [selected]
+    - tab "Черновик"
+    - tab "В работе"
+    - tab "Завершён"
+    - tab "Отменён"
+    - tab "В архиве"
+    - tab "Отправлен в 1С"
+    - tab "Ошибка выгрузки"
+  - table:
+    - rowgroup:
+      - row "Toggle all rows Номер документа Заголовок Действие Автор Дата":
+        - columnheader "Toggle all rows":
+          - checkbox "Toggle all rows"
+        - columnheader "Номер документа"
+        - columnheader "Заголовок"
+        - columnheader "Действие"
+        - columnheader "Автор"
+        - columnheader "Дата"
+    - rowgroup:
+      - row "Нет документов, ожидающих подписи":
+        - cell "Нет документов, ожидающих подписи":
+          - paragraph: Нет документов, ожидающих подписи
+  - paragraph: "Записей на странице:"
+  - 'combobox "Записей на странице: 25"': "25"
+  - paragraph: 0–0 из 0
+  - button "Go to previous page" [disabled]
+  - button "Go to next page" [disabled]
+- region "Notifications alt+T"

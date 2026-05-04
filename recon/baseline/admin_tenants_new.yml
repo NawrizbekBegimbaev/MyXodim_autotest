@@ -1,0 +1,58 @@
+- complementary:
+  - link "Logo":
+    - /url: /
+    - img: B
+  - heading "BusinessHub" [level=6]
+  - text: Панель администратора
+  - navigation:
+    - list:
+      - listitem:
+        - list:
+          - listitem:
+            - link "Дашборд":
+              - /url: /dashboard
+          - listitem:
+            - link "Компании":
+              - /url: /tenants
+          - listitem:
+            - link "Adminlar":
+              - /url: /admins
+  - separator
+  - text: A
+  - heading "Admin User" [level=6]
+  - button "dark mode"
+  - button "change language": ru
+  - button "Выйти"
+  - button "collapse sidebar"
+- button "Назад"
+- heading "Новая компания" [level=5]
+- paragraph: Создание компании и администратора
+- heading "Данные компании" [level=6]
+- text: Название компании *
+- textbox "Название компании *":
+  - /placeholder: SoftTeam Pro
+- text: Slug *
+- textbox "Slug *":
+  - /placeholder: softteam-pro
+- text: ИНН
+- textbox "ИНН":
+  - /placeholder: "123456789"
+- separator
+- heading "Администратор" [level=6]
+- text: Имя *
+- textbox "Имя *":
+  - /placeholder: Alisher
+- text: Фамилия *
+- textbox "Фамилия *":
+  - /placeholder: Karimov
+- text: Телефон *
+- paragraph: "+998"
+- textbox "Телефон *":
+  - /placeholder: "901234567"
+- text: ПИНФЛ *
+- textbox "ПИНФЛ *":
+  - /placeholder: "12345678901234"
+- separator
+- button "Отмена"
+- button "Создать"
+- region "Notifications alt+T"

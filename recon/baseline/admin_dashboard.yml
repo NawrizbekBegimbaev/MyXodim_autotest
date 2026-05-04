@@ -1,0 +1,52 @@
+- complementary:
+  - link "Logo":
+    - /url: /
+    - img: B
+  - heading "BusinessHub" [level=6]
+  - text: Панель администратора
+  - navigation:
+    - list:
+      - listitem:
+        - list:
+          - listitem:
+            - link "Дашборд":
+              - /url: /dashboard
+          - listitem:
+            - link "Компании":
+              - /url: /tenants
+          - listitem:
+            - link "Adminlar":
+              - /url: /admins
+  - separator
+  - text: A
+  - heading "Admin User" [level=6]
+  - button "dark mode"
+  - button "change language": ru
+  - button "Выйти"
+  - button "collapse sidebar"
+- heading "Дашборд" [level=4]
+- paragraph: Обзор платформы и статистика
+- button "Добавить компанию"
+- paragraph: Всего компаний
+- heading "89" [level=2]
+- paragraph: Активных компаний
+- heading "88" [level=2]
+- paragraph: Всего пользователей
+- heading "225" [level=2]
+- heading "Недавние компании" [level=6]
+- button "Все"
+- paragraph: "[E2E mock1c] d1dcd7"
+- text: e2e-m1c-d1dcd7 Активна
+- paragraph: "[E2E] bnd-969909"
+- text: e2e-bnd-969909 Активна
+- paragraph: "[E2E] bnd-651228"
+- text: e2e-bnd-651228 Активна
+- paragraph: "'; DROP TABLE tenants; --"
+- text: e2e-bnd-263566 Активна
+- paragraph: "[E2E mock1c] ed3da2"
+- text: e2e-m1c-ed3da2 Активна
+- heading "Статус компаний" [level=6]
+- application
+- heading "99%" [level=3]
+- text: активны Активные Отключённые
+- region "Notifications alt+T"

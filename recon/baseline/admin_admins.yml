@@ -1,0 +1,63 @@
+- complementary:
+  - link "Logo":
+    - /url: /
+    - img: B
+  - heading "BusinessHub" [level=6]
+  - text: Панель администратора
+  - navigation:
+    - list:
+      - listitem:
+        - list:
+          - listitem:
+            - link "Дашборд":
+              - /url: /dashboard
+          - listitem:
+            - link "Компании":
+              - /url: /tenants
+          - listitem:
+            - link "Adminlar":
+              - /url: /admins
+  - separator
+  - text: A
+  - heading "Admin User" [level=6]
+  - button "dark mode"
+  - button "change language": ru
+  - button "Выйти"
+  - button "collapse sidebar"
+- heading "Adminlar" [level=4]
+- paragraph: Platforma administratorlari
+- button "Yangi admin"
+- textbox "Qidirish..."
+- table:
+  - rowgroup:
+    - row "Ism Telefon Holat Yaratilgan":
+      - columnheader "Ism"
+      - columnheader "Telefon"
+      - columnheader "Holat"
+      - columnheader "Yaratilgan"
+      - columnheader
+  - rowgroup:
+    - row "Platform Admin(siz) +998991234567 Faol 30.04.2026":
+      - cell "Platform Admin(siz)":
+        - paragraph: Platform Admin(siz)
+      - cell "+998991234567"
+      - cell "Faol"
+      - cell "30.04.2026"
+      - cell:
+        - button
+- paragraph: "На странице:"
+- combobox: "25"
+- paragraph: 1–1 из 1
+- navigation "pagination navigation":
+  - list:
+    - listitem:
+      - button "Go to first page" [disabled]
+    - listitem:
+      - button "Go to previous page" [disabled]
+    - listitem:
+      - button "page 1": "1"
+    - listitem:
+      - button "Go to next page" [disabled]
+    - listitem:
+      - button "Go to last page" [disabled]
+- region "Notifications alt+T"

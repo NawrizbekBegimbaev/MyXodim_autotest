@@ -1,0 +1,68 @@
+- heading "TeamQa" [level=6]
+- text: STIR 983154321
+- button "Yopish"
+- button "Yashirish"
+- region "scrollable content":
+  - navigation:
+    - list:
+      - listitem:
+        - list:
+          - listitem:
+            - link "Главная":
+              - /url: /dashboard
+      - listitem:
+        - list:
+          - listitem:
+            - button "Документооборот"
+      - listitem:
+        - list:
+          - listitem:
+            - button "Оргструктура"
+      - listitem:
+        - list:
+          - listitem:
+            - button "Настройки"
+- separator
+- button "Switch language to O'zbekcha": RU
+- button "Toggle theme"
+- separator
+- button "User menu":
+  - text: +
+  - paragraph: "+998913030519"
+  - text: Администратор
+- main:
+  - heading "Xush kelibsiz, Наврузбек Бегимбаев" [level=1]
+  - paragraph: понедельник, 4 мая·Администратор
+  - button "Создать документ"
+  - group:
+    - button "7 дней"
+    - button "30 дней" [pressed]
+    - button "90 дней"
+    - button "12 месяцев"
+  - heading "1" [level=5]
+  - text: Создано
+  - heading "0" [level=5]
+  - text: Завершено
+  - heading "0" [level=5]
+  - text: Отклонено
+  - heading "1" [level=5]
+  - text: В работе
+  - heading "—" [level=5]
+  - text: Среднее время согласования
+  - heading "—" [level=5]
+  - text: Медианное время
+  - heading "Динамика документов" [level=6]
+  - application "area chart with 3 data series": 1 0.8 0.6 0.4 0.2 0 04 апр. 05 апр. 06 апр. 07 апр. 08 апр. 09 апр. 10 апр. 11 апр. 12 апр. 13 апр. 14 апр. 15 апр. 16 апр. 17 апр. 18 апр. 19 апр. 20 апр. 21 апр. 22 апр. 23 апр. 24 апр. 25 апр. 26 апр. 27 апр. 28 апр. 29 апр. 30 апр. 01 мая 02 мая 03 мая
+  - button "Создано, visible. Press Enter or Space to toggle.":
+    - img
+    - text: Создано
+  - button "Завершено, visible. Press Enter or Space to toggle.":
+    - img
+    - text: Завершено
+  - button "Отклонено, visible. Press Enter or Space to toggle.":
+    - img
+    - text: Отклонено
+  - heading "Узкие шаги маршрутов" [level=6]
+  - text: По среднему времени на шаге
+  - paragraph: Нет данных за выбранный период
+- region "Notifications alt+T"

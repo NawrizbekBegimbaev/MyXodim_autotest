@@ -1,0 +1,215 @@
+- heading "TeamQa" [level=6]
+- text: STIR 983154321
+- button "Yopish"
+- button "Yashirish"
+- region "scrollable content":
+  - navigation:
+    - list:
+      - listitem:
+        - list:
+          - listitem:
+            - link "Главная":
+              - /url: /dashboard
+      - listitem:
+        - list:
+          - listitem:
+            - button "Документооборот"
+      - listitem:
+        - list:
+          - listitem:
+            - button "Оргструктура"
+            - list:
+              - listitem:
+                - link "Пользователи":
+                  - /url: /members
+              - listitem:
+                - link "Филиалы":
+                  - /url: /branches
+              - listitem:
+                - link "Отделы":
+                  - /url: /departments
+              - listitem:
+                - link "Должности":
+                  - /url: /positions
+              - listitem:
+                - link "Штатные позиции":
+                  - /url: /org-positions
+      - listitem:
+        - list:
+          - listitem:
+            - button "Настройки"
+- separator
+- button "Switch language to O'zbekcha": RU
+- button "Toggle theme"
+- separator
+- button "User menu":
+  - text: +
+  - paragraph: "+998913030519"
+  - text: Администратор
+- main:
+  - heading "Должности" [level=4]
+  - paragraph: Всего 47 должностей
+  - button "Добавить должность"
+  - textbox "Поиск по названию..."
+  - table:
+    - rowgroup:
+      - row "Название должности Действия":
+        - columnheader "Название должности"
+        - columnheader "Действия"
+    - rowgroup:
+      - row "'; DROP TABLE positions; -- Редактировать Удалить":
+        - cell "'; DROP TABLE positions; --":
+          - paragraph: "'; DROP TABLE positions; --"
+        - cell "Редактировать Удалить":
+          - button "Редактировать"
+          - button "Удалить"
+      - row "<script>alert(1)</script> Редактировать Удалить":
+        - cell "<script>alert(1)</script>":
+          - paragraph: <script>alert(1)</script>
+        - cell "Редактировать Удалить":
+          - button "Редактировать"
+          - button "Удалить"
+      - row "[E2E] Dup 3e91f3 Редактировать Удалить":
+        - cell "[E2E] Dup 3e91f3":
+          - paragraph: "[E2E] Dup 3e91f3"
+        - cell "Редактировать Удалить":
+          - button "Редактировать"
+          - button "Удалить"
+      - row "[E2E] Dup 3e91f3 Редактировать Удалить":
+        - cell "[E2E] Dup 3e91f3":
+          - paragraph: "[E2E] Dup 3e91f3"
+        - cell "Редактировать Удалить":
+          - button "Редактировать"
+          - button "Удалить"
+      - row "[E2E] Search b6f4cd Редактировать Удалить":
+        - cell "[E2E] Search b6f4cd":
+          - paragraph: "[E2E] Search b6f4cd"
+        - cell "Редактировать Удалить":
+          - button "Редактировать"
+          - button "Удалить"
+      - row "[E2E] Keep cbc787 Редактировать Удалить":
+        - cell "[E2E] Keep cbc787":
+          - paragraph: "[E2E] Keep cbc787"
+        - cell "Редактировать Удалить":
+          - button "Редактировать"
+          - button "Удалить"
+      - row "[E2E] Init 177f57 (upd) Редактировать Удалить":
+        - cell "[E2E] Init 177f57 (upd)":
+          - paragraph: "[E2E] Init 177f57 (upd)"
+        - cell "Редактировать Удалить":
+          - button "Редактировать"
+          - button "Удалить"
+      - row "[E2E] Должн 91f481 Редактировать Удалить":
+        - cell "[E2E] Должн 91f481":
+          - paragraph: "[E2E] Должн 91f481"
+        - cell "Редактировать Удалить":
+          - button "Редактировать"
+          - button "Удалить"
+      - row "'; DROP TABLE positions; -- Редактировать Удалить":
+        - cell "'; DROP TABLE positions; --":
+          - paragraph: "'; DROP TABLE positions; --"
+        - cell "Редактировать Удалить":
+          - button "Редактировать"
+          - button "Удалить"
+      - row "<script>alert(1)</script> Редактировать Удалить":
+        - cell "<script>alert(1)</script>":
+          - paragraph: <script>alert(1)</script>
+        - cell "Редактировать Удалить":
+          - button "Редактировать"
+          - button "Удалить"
+      - row "'; DROP TABLE positions; -- Редактировать Удалить":
+        - cell "'; DROP TABLE positions; --":
+          - paragraph: "'; DROP TABLE positions; --"
+        - cell "Редактировать Удалить":
+          - button "Редактировать"
+          - button "Удалить"
+      - row "<script>alert(1)</script> Редактировать Удалить":
+        - cell "<script>alert(1)</script>":
+          - paragraph: <script>alert(1)</script>
+        - cell "Редактировать Удалить":
+          - button "Редактировать"
+          - button "Удалить"
+      - row "[E2E] Dup d757a8 Редактировать Удалить":
+        - cell "[E2E] Dup d757a8":
+          - paragraph: "[E2E] Dup d757a8"
+        - cell "Редактировать Удалить":
+          - button "Редактировать"
+          - button "Удалить"
+      - row "[E2E] Dup d757a8 Редактировать Удалить":
+        - cell "[E2E] Dup d757a8":
+          - paragraph: "[E2E] Dup d757a8"
+        - cell "Редактировать Удалить":
+          - button "Редактировать"
+          - button "Удалить"
+      - row "[E2E] Search e10114 Редактировать Удалить":
+        - cell "[E2E] Search e10114":
+          - paragraph: "[E2E] Search e10114"
+        - cell "Редактировать Удалить":
+          - button "Редактировать"
+          - button "Удалить"
+      - row "[E2E] Keep bae8d3 Редактировать Удалить":
+        - cell "[E2E] Keep bae8d3":
+          - paragraph: "[E2E] Keep bae8d3"
+        - cell "Редактировать Удалить":
+          - button "Редактировать"
+          - button "Удалить"
+      - row "[E2E] Init fc6839 (upd) Редактировать Удалить":
+        - cell "[E2E] Init fc6839 (upd)":
+          - paragraph: "[E2E] Init fc6839 (upd)"
+        - cell "Редактировать Удалить":
+          - button "Редактировать"
+          - button "Удалить"
+      - row "[E2E] Должн 39dec5 Редактировать Удалить":
+        - cell "[E2E] Должн 39dec5":
+          - paragraph: "[E2E] Должн 39dec5"
+        - cell "Редактировать Удалить":
+          - button "Редактировать"
+          - button "Удалить"
+      - row "'; DROP TABLE positions; -- Редактировать Удалить":
+        - cell "'; DROP TABLE positions; --":
+          - paragraph: "'; DROP TABLE positions; --"
+        - cell "Редактировать Удалить":
+          - button "Редактировать"
+          - button "Удалить"
+      - row "<script>alert(1)</script> Редактировать Удалить":
+        - cell "<script>alert(1)</script>":
+          - paragraph: <script>alert(1)</script>
+        - cell "Редактировать Удалить":
+          - button "Редактировать"
+          - button "Удалить"
+      - row "[E2E] Dup e35be1 Редактировать Удалить":
+        - cell "[E2E] Dup e35be1":
+          - paragraph: "[E2E] Dup e35be1"
+        - cell "Редактировать Удалить":
+          - button "Редактировать"
+          - button "Удалить"
+      - row "[E2E] Dup e35be1 Редактировать Удалить":
+        - cell "[E2E] Dup e35be1":
+          - paragraph: "[E2E] Dup e35be1"
+        - cell "Редактировать Удалить":
+          - button "Редактировать"
+          - button "Удалить"
+      - row "[E2E] Search cceefa Редактировать Удалить":
+        - cell "[E2E] Search cceefa":
+          - paragraph: "[E2E] Search cceefa"
+        - cell "Редактировать Удалить":
+          - button "Редактировать"
+          - button "Удалить"
+      - row "[E2E] Keep 8985ac Редактировать Удалить":
+        - cell "[E2E] Keep 8985ac":
+          - paragraph: "[E2E] Keep 8985ac"
+        - cell "Редактировать Удалить":
+          - button "Редактировать"
+          - button "Удалить"
+      - row "[E2E] Init b7574c (upd) Редактировать Удалить":
+        - cell "[E2E] Init b7574c (upd)":
+          - paragraph: "[E2E] Init b7574c (upd)"
+        - cell "Редактировать Удалить":
+          - button "Редактировать"
+          - button "Удалить"
+  - paragraph: "Записей на странице:"
+  - 'combobox "Записей на странице: 25"': "25"
+  - paragraph: 1–25 из 47
+  - button "Go to previous page" [disabled]
+  - button "Go to next page"
+- region "Notifications alt+T"

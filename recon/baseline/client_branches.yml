@@ -1,0 +1,75 @@
+- heading "TeamQa" [level=6]
+- text: STIR 983154321
+- button "Yopish"
+- button "Yashirish"
+- region "scrollable content":
+  - navigation:
+    - list:
+      - listitem:
+        - list:
+          - listitem:
+            - link "Главная":
+              - /url: /dashboard
+      - listitem:
+        - list:
+          - listitem:
+            - button "Документооборот"
+      - listitem:
+        - list:
+          - listitem:
+            - button "Оргструктура"
+            - list:
+              - listitem:
+                - link "Пользователи":
+                  - /url: /members
+              - listitem:
+                - link "Филиалы":
+                  - /url: /branches
+              - listitem:
+                - link "Отделы":
+                  - /url: /departments
+              - listitem:
+                - link "Должности":
+                  - /url: /positions
+              - listitem:
+                - link "Штатные позиции":
+                  - /url: /org-positions
+      - listitem:
+        - list:
+          - listitem:
+            - button "Настройки"
+- separator
+- button "Switch language to O'zbekcha": RU
+- button "Toggle theme"
+- separator
+- button "User menu":
+  - text: +
+  - paragraph: "+998913030519"
+  - text: Администратор
+- main:
+  - heading "Филиалы" [level=4]
+  - paragraph: Структура головного офиса и филиалов организации.
+  - textbox "Поиск по названию…"
+  - button "Добавить филиал"
+  - tablist:
+    - tab "Jadval" [selected]
+    - tab "Iyerarxiya"
+  - table:
+    - rowgroup:
+      - row "Филиал Tur Отделы Пользователи Действия":
+        - columnheader "Филиал"
+        - columnheader "Tur"
+        - columnheader "Отделы"
+        - columnheader "Пользователи"
+        - columnheader "Действия"
+    - rowgroup:
+      - row "TeamQa Активен Главный офис 0 0 Редактировать":
+        - cell "TeamQa Активен":
+          - paragraph: TeamQa
+          - text: Активен
+        - cell "Главный офис"
+        - cell "0"
+        - cell "0"
+        - cell "Редактировать":
+          - button "Редактировать"
+- region "Notifications alt+T"

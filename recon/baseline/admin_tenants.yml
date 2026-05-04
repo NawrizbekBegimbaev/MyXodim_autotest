@@ -1,0 +1,312 @@
+- complementary:
+  - link "Logo":
+    - /url: /
+    - img: B
+  - heading "BusinessHub" [level=6]
+  - text: Панель администратора
+  - navigation:
+    - list:
+      - listitem:
+        - list:
+          - listitem:
+            - link "Дашборд":
+              - /url: /dashboard
+          - listitem:
+            - link "Компании":
+              - /url: /tenants
+          - listitem:
+            - link "Adminlar":
+              - /url: /admins
+  - separator
+  - text: A
+  - heading "Admin User" [level=6]
+  - button "dark mode"
+  - button "change language": ru
+  - button "Выйти"
+  - button "collapse sidebar"
+- heading "Компании" [level=4]
+- paragraph: Список компаний платформы
+- button "Добавить компанию"
+- textbox "Поиск..."
+- table:
+  - rowgroup:
+    - row "Компания ИНН Пользователи Статус Создана":
+      - columnheader "Компания"
+      - columnheader "ИНН"
+      - columnheader "Пользователи"
+      - columnheader "Статус"
+      - columnheader "Создана"
+      - columnheader
+  - rowgroup:
+    - row "[E2E mock1c] d1dcd7 e2e-m1c-d1dcd7 475769287 1 Активна 03.05.2026 Отключить":
+      - cell "[E2E mock1c] d1dcd7 e2e-m1c-d1dcd7":
+        - paragraph: "[E2E mock1c] d1dcd7"
+        - text: e2e-m1c-d1dcd7
+      - cell "475769287"
+      - cell "1"
+      - cell "Активна"
+      - cell "03.05.2026"
+      - cell "Отключить":
+        - switch [checked]
+    - row "[E2E] bnd-969909 e2e-bnd-969909 745152439 1 Активна 03.05.2026 Отключить":
+      - cell "[E2E] bnd-969909 e2e-bnd-969909":
+        - paragraph: "[E2E] bnd-969909"
+        - text: e2e-bnd-969909
+      - cell "745152439"
+      - cell "1"
+      - cell "Активна"
+      - cell "03.05.2026"
+      - cell "Отключить":
+        - switch [checked]
+    - row "[E2E] bnd-651228 e2e-bnd-651228 337357200 1 Активна 03.05.2026 Отключить":
+      - cell "[E2E] bnd-651228 e2e-bnd-651228":
+        - paragraph: "[E2E] bnd-651228"
+        - text: e2e-bnd-651228
+      - cell "337357200"
+      - cell "1"
+      - cell "Активна"
+      - cell "03.05.2026"
+      - cell "Отключить":
+        - switch [checked]
+    - row "'; DROP TABLE tenants; -- e2e-bnd-263566 138477888 1 Активна 03.05.2026 Отключить":
+      - cell "'; DROP TABLE tenants; -- e2e-bnd-263566":
+        - paragraph: "'; DROP TABLE tenants; --"
+        - text: e2e-bnd-263566
+      - cell "138477888"
+      - cell "1"
+      - cell "Активна"
+      - cell "03.05.2026"
+      - cell "Отключить":
+        - switch [checked]
+    - row "[E2E mock1c] ed3da2 e2e-m1c-ed3da2 138191048 1 Активна 03.05.2026 Отключить":
+      - cell "[E2E mock1c] ed3da2 e2e-m1c-ed3da2":
+        - paragraph: "[E2E mock1c] ed3da2"
+        - text: e2e-m1c-ed3da2
+      - cell "138191048"
+      - cell "1"
+      - cell "Активна"
+      - cell "03.05.2026"
+      - cell "Отключить":
+        - switch [checked]
+    - row "[E2E mock1c] 8d6e86 e2e-m1c-8d6e86 992963407 1 Активна 03.05.2026 Отключить":
+      - cell "[E2E mock1c] 8d6e86 e2e-m1c-8d6e86":
+        - paragraph: "[E2E mock1c] 8d6e86"
+        - text: e2e-m1c-8d6e86
+      - cell "992963407"
+      - cell "1"
+      - cell "Активна"
+      - cell "03.05.2026"
+      - cell "Отключить":
+        - switch [checked]
+    - row "[E2E] bnd-325995 e2e-bnd-325995 810558307 1 Активна 03.05.2026 Отключить":
+      - cell "[E2E] bnd-325995 e2e-bnd-325995":
+        - paragraph: "[E2E] bnd-325995"
+        - text: e2e-bnd-325995
+      - cell "810558307"
+      - cell "1"
+      - cell "Активна"
+      - cell "03.05.2026"
+      - cell "Отключить":
+        - switch [checked]
+    - row "[E2E anchor] f29ab4 e2e-anchor-f29ab4 660251439 1 Активна 03.05.2026 Отключить":
+      - cell "[E2E anchor] f29ab4 e2e-anchor-f29ab4":
+        - paragraph: "[E2E anchor] f29ab4"
+        - text: e2e-anchor-f29ab4
+      - cell "660251439"
+      - cell "1"
+      - cell "Активна"
+      - cell "03.05.2026"
+      - cell "Отключить":
+        - switch [checked]
+    - row "[E2E] 80c69c e2e-80c69c 228367588 1 Активна 03.05.2026 Отключить":
+      - cell "[E2E] 80c69c e2e-80c69c":
+        - paragraph: "[E2E] 80c69c"
+        - text: e2e-80c69c
+      - cell "228367588"
+      - cell "1"
+      - cell "Активна"
+      - cell "03.05.2026"
+      - cell "Отключить":
+        - switch [checked]
+    - row "[E2E] d6e3b4 e2e-d6e3b4 269636811 1 Активна 03.05.2026 Отключить":
+      - cell "[E2E] d6e3b4 e2e-d6e3b4":
+        - paragraph: "[E2E] d6e3b4"
+        - text: e2e-d6e3b4
+      - cell "269636811"
+      - cell "1"
+      - cell "Активна"
+      - cell "03.05.2026"
+      - cell "Отключить":
+        - switch [checked]
+    - row "<script>alert(1)</script> e2e-bnd-100886 526492424 1 Активна 03.05.2026 Отключить":
+      - cell "<script>alert(1)</script> e2e-bnd-100886":
+        - paragraph: <script>alert(1)</script>
+        - text: e2e-bnd-100886
+      - cell "526492424"
+      - cell "1"
+      - cell "Активна"
+      - cell "03.05.2026"
+      - cell "Отключить":
+        - switch [checked]
+    - row "[E2E anchor] 257477 e2e-anchor-257477 189383503 1 Активна 03.05.2026 Отключить":
+      - cell "[E2E anchor] 257477 e2e-anchor-257477":
+        - paragraph: "[E2E anchor] 257477"
+        - text: e2e-anchor-257477
+      - cell "189383503"
+      - cell "1"
+      - cell "Активна"
+      - cell "03.05.2026"
+      - cell "Отключить":
+        - switch [checked]
+    - row "[E2E anchor] 6c16b2 e2e-anchor-6c16b2 606638179 1 Активна 03.05.2026 Отключить":
+      - cell "[E2E anchor] 6c16b2 e2e-anchor-6c16b2":
+        - paragraph: "[E2E anchor] 6c16b2"
+        - text: e2e-anchor-6c16b2
+      - cell "606638179"
+      - cell "1"
+      - cell "Активна"
+      - cell "03.05.2026"
+      - cell "Отключить":
+        - switch [checked]
+    - row "[E2E] btn-567070 e2e-btn-567070 295972774 1 Активна 03.05.2026 Отключить":
+      - cell "[E2E] btn-567070 e2e-btn-567070":
+        - paragraph: "[E2E] btn-567070"
+        - text: e2e-btn-567070
+      - cell "295972774"
+      - cell "1"
+      - cell "Активна"
+      - cell "03.05.2026"
+      - cell "Отключить":
+        - switch [checked]
+    - row "[E2E anchor] 63d596 e2e-anchor-63d596 373880330 1 Активна 03.05.2026 Отключить":
+      - cell "[E2E anchor] 63d596 e2e-anchor-63d596":
+        - paragraph: "[E2E anchor] 63d596"
+        - text: e2e-anchor-63d596
+      - cell "373880330"
+      - cell "1"
+      - cell "Активна"
+      - cell "03.05.2026"
+      - cell "Отключить":
+        - switch [checked]
+    - row "[E2E] bnd-937574 e2e-bnd-937574 483044425 1 Активна 03.05.2026 Отключить":
+      - cell "[E2E] bnd-937574 e2e-bnd-937574":
+        - paragraph: "[E2E] bnd-937574"
+        - text: e2e-bnd-937574
+      - cell "483044425"
+      - cell "1"
+      - cell "Активна"
+      - cell "03.05.2026"
+      - cell "Отключить":
+        - switch [checked]
+    - row "[E2E mock1c] 86fc6e e2e-m1c-86fc6e 311357977 1 Активна 03.05.2026 Отключить":
+      - cell "[E2E mock1c] 86fc6e e2e-m1c-86fc6e":
+        - paragraph: "[E2E mock1c] 86fc6e"
+        - text: e2e-m1c-86fc6e
+      - cell "311357977"
+      - cell "1"
+      - cell "Активна"
+      - cell "03.05.2026"
+      - cell "Отключить":
+        - switch [checked]
+    - row "[E2E] bnd-808347 e2e-bnd-808347 446527102 1 Активна 03.05.2026 Отключить":
+      - cell "[E2E] bnd-808347 e2e-bnd-808347":
+        - paragraph: "[E2E] bnd-808347"
+        - text: e2e-bnd-808347
+      - cell "446527102"
+      - cell "1"
+      - cell "Активна"
+      - cell "03.05.2026"
+      - cell "Отключить":
+        - switch [checked]
+    - row "'; DROP TABLE tenants; -- e2e-bnd-797287 931064082 1 Активна 03.05.2026 Отключить":
+      - cell "'; DROP TABLE tenants; -- e2e-bnd-797287":
+        - paragraph: "'; DROP TABLE tenants; --"
+        - text: e2e-bnd-797287
+      - cell "931064082"
+      - cell "1"
+      - cell "Активна"
+      - cell "03.05.2026"
+      - cell "Отключить":
+        - switch [checked]
+    - row "[E2E mock1c] 5a8786 e2e-m1c-5a8786 263582926 1 Активна 03.05.2026 Отключить":
+      - cell "[E2E mock1c] 5a8786 e2e-m1c-5a8786":
+        - paragraph: "[E2E mock1c] 5a8786"
+        - text: e2e-m1c-5a8786
+      - cell "263582926"
+      - cell "1"
+      - cell "Активна"
+      - cell "03.05.2026"
+      - cell "Отключить":
+        - switch [checked]
+    - row "[E2E mock1c] d312c3 e2e-m1c-d312c3 383117929 1 Активна 03.05.2026 Отключить":
+      - cell "[E2E mock1c] d312c3 e2e-m1c-d312c3":
+        - paragraph: "[E2E mock1c] d312c3"
+        - text: e2e-m1c-d312c3
+      - cell "383117929"
+      - cell "1"
+      - cell "Активна"
+      - cell "03.05.2026"
+      - cell "Отключить":
+        - switch [checked]
+    - row "[E2E] bnd-330066 e2e-bnd-330066 295808073 1 Активна 03.05.2026 Отключить":
+      - cell "[E2E] bnd-330066 e2e-bnd-330066":
+        - paragraph: "[E2E] bnd-330066"
+        - text: e2e-bnd-330066
+      - cell "295808073"
+      - cell "1"
+      - cell "Активна"
+      - cell "03.05.2026"
+      - cell "Отключить":
+        - switch [checked]
+    - row "[E2E anchor] b22e70 e2e-anchor-b22e70 983835110 1 Активна 03.05.2026 Отключить":
+      - cell "[E2E anchor] b22e70 e2e-anchor-b22e70":
+        - paragraph: "[E2E anchor] b22e70"
+        - text: e2e-anchor-b22e70
+      - cell "983835110"
+      - cell "1"
+      - cell "Активна"
+      - cell "03.05.2026"
+      - cell "Отключить":
+        - switch [checked]
+    - row "[E2E] 750209 e2e-750209 772011161 1 Активна 03.05.2026 Отключить":
+      - cell "[E2E] 750209 e2e-750209":
+        - paragraph: "[E2E] 750209"
+        - text: e2e-750209
+      - cell "772011161"
+      - cell "1"
+      - cell "Активна"
+      - cell "03.05.2026"
+      - cell "Отключить":
+        - switch [checked]
+    - row "[E2E] 2c60c3 e2e-2c60c3 558320087 1 Активна 03.05.2026 Отключить":
+      - cell "[E2E] 2c60c3 e2e-2c60c3":
+        - paragraph: "[E2E] 2c60c3"
+        - text: e2e-2c60c3
+      - cell "558320087"
+      - cell "1"
+      - cell "Активна"
+      - cell "03.05.2026"
+      - cell "Отключить":
+        - switch [checked]
+- paragraph: "На странице:"
+- combobox: "25"
+- paragraph: 1–25 из 89
+- navigation "pagination navigation":
+  - list:
+    - listitem:
+      - button "Go to first page" [disabled]
+    - listitem:
+      - button "Go to previous page" [disabled]
+    - listitem:
+      - button "page 1": "1"
+    - listitem:
+      - button "Go to page 2": "2"
+    - listitem:
+      - button "Go to page 3": "3"
+    - listitem:
+      - button "Go to page 4": "4"
+    - listitem:
+      - button "Go to next page"
+    - listitem:
+      - button "Go to last page"
+- region "Notifications alt+T"
