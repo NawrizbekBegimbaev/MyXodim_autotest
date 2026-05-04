@@ -1,7 +1,7 @@
 - heading "TeamQa" [level=6]
-- text: STIR 983154321
-- button "Yopish"
-- button "Yashirish"
+- text: ИНН 983154321
+- button "Свернуть"
+- button "Скрыть"
 - region "scrollable content":
   - navigation:
     - list:
@@ -48,7 +48,7 @@
   - text: Администратор
 - main:
   - heading "Должности" [level=4]
-  - paragraph: Всего 47 должностей
+  - paragraph: Всего 63 должностей
   - button "Добавить должность"
   - textbox "Поиск по названию..."
   - table:
@@ -57,6 +57,102 @@
         - columnheader "Название должности"
         - columnheader "Действия"
     - rowgroup:
+      - row "'; DROP TABLE positions; -- Редактировать Удалить":
+        - cell "'; DROP TABLE positions; --":
+          - paragraph: "'; DROP TABLE positions; --"
+        - cell "Редактировать Удалить":
+          - button "Редактировать"
+          - button "Удалить"
+      - row "<script>alert(1)</script> Редактировать Удалить":
+        - cell "<script>alert(1)</script>":
+          - paragraph: <script>alert(1)</script>
+        - cell "Редактировать Удалить":
+          - button "Редактировать"
+          - button "Удалить"
+      - row "[E2E] Dup 05de00 Редактировать Удалить":
+        - cell "[E2E] Dup 05de00":
+          - paragraph: "[E2E] Dup 05de00"
+        - cell "Редактировать Удалить":
+          - button "Редактировать"
+          - button "Удалить"
+      - row "[E2E] Dup 05de00 Редактировать Удалить":
+        - cell "[E2E] Dup 05de00":
+          - paragraph: "[E2E] Dup 05de00"
+        - cell "Редактировать Удалить":
+          - button "Редактировать"
+          - button "Удалить"
+      - row "[E2E] Search 4a1b35 Редактировать Удалить":
+        - cell "[E2E] Search 4a1b35":
+          - paragraph: "[E2E] Search 4a1b35"
+        - cell "Редактировать Удалить":
+          - button "Редактировать"
+          - button "Удалить"
+      - row "[E2E] Keep a2be5d Редактировать Удалить":
+        - cell "[E2E] Keep a2be5d":
+          - paragraph: "[E2E] Keep a2be5d"
+        - cell "Редактировать Удалить":
+          - button "Редактировать"
+          - button "Удалить"
+      - row "[E2E] Init c3cd42 (upd) Редактировать Удалить":
+        - cell "[E2E] Init c3cd42 (upd)":
+          - paragraph: "[E2E] Init c3cd42 (upd)"
+        - cell "Редактировать Удалить":
+          - button "Редактировать"
+          - button "Удалить"
+      - row "[E2E] Должн ec6253 Редактировать Удалить":
+        - cell "[E2E] Должн ec6253":
+          - paragraph: "[E2E] Должн ec6253"
+        - cell "Редактировать Удалить":
+          - button "Редактировать"
+          - button "Удалить"
+      - row "'; DROP TABLE positions; -- Редактировать Удалить":
+        - cell "'; DROP TABLE positions; --":
+          - paragraph: "'; DROP TABLE positions; --"
+        - cell "Редактировать Удалить":
+          - button "Редактировать"
+          - button "Удалить"
+      - row "<script>alert(1)</script> Редактировать Удалить":
+        - cell "<script>alert(1)</script>":
+          - paragraph: <script>alert(1)</script>
+        - cell "Редактировать Удалить":
+          - button "Редактировать"
+          - button "Удалить"
+      - row "[E2E] Dup d2dbd1 Редактировать Удалить":
+        - cell "[E2E] Dup d2dbd1":
+          - paragraph: "[E2E] Dup d2dbd1"
+        - cell "Редактировать Удалить":
+          - button "Редактировать"
+          - button "Удалить"
+      - row "[E2E] Dup d2dbd1 Редактировать Удалить":
+        - cell "[E2E] Dup d2dbd1":
+          - paragraph: "[E2E] Dup d2dbd1"
+        - cell "Редактировать Удалить":
+          - button "Редактировать"
+          - button "Удалить"
+      - row "[E2E] Search c2891e Редактировать Удалить":
+        - cell "[E2E] Search c2891e":
+          - paragraph: "[E2E] Search c2891e"
+        - cell "Редактировать Удалить":
+          - button "Редактировать"
+          - button "Удалить"
+      - row "[E2E] Keep 4ec4fd Редактировать Удалить":
+        - cell "[E2E] Keep 4ec4fd":
+          - paragraph: "[E2E] Keep 4ec4fd"
+        - cell "Редактировать Удалить":
+          - button "Редактировать"
+          - button "Удалить"
+      - row "[E2E] Init 71c906 (upd) Редактировать Удалить":
+        - cell "[E2E] Init 71c906 (upd)":
+          - paragraph: "[E2E] Init 71c906 (upd)"
+        - cell "Редактировать Удалить":
+          - button "Редактировать"
+          - button "Удалить"
+      - row "[E2E] Должн 5cf5ba Редактировать Удалить":
+        - cell "[E2E] Должн 5cf5ba":
+          - paragraph: "[E2E] Должн 5cf5ba"
+        - cell "Редактировать Удалить":
+          - button "Редактировать"
+          - button "Удалить"
       - row "'; DROP TABLE positions; -- Редактировать Удалить":
         - cell "'; DROP TABLE positions; --":
           - paragraph: "'; DROP TABLE positions; --"
@@ -111,105 +207,9 @@
         - cell "Редактировать Удалить":
           - button "Редактировать"
           - button "Удалить"
-      - row "<script>alert(1)</script> Редактировать Удалить":
-        - cell "<script>alert(1)</script>":
-          - paragraph: <script>alert(1)</script>
-        - cell "Редактировать Удалить":
-          - button "Редактировать"
-          - button "Удалить"
-      - row "'; DROP TABLE positions; -- Редактировать Удалить":
-        - cell "'; DROP TABLE positions; --":
-          - paragraph: "'; DROP TABLE positions; --"
-        - cell "Редактировать Удалить":
-          - button "Редактировать"
-          - button "Удалить"
-      - row "<script>alert(1)</script> Редактировать Удалить":
-        - cell "<script>alert(1)</script>":
-          - paragraph: <script>alert(1)</script>
-        - cell "Редактировать Удалить":
-          - button "Редактировать"
-          - button "Удалить"
-      - row "[E2E] Dup d757a8 Редактировать Удалить":
-        - cell "[E2E] Dup d757a8":
-          - paragraph: "[E2E] Dup d757a8"
-        - cell "Редактировать Удалить":
-          - button "Редактировать"
-          - button "Удалить"
-      - row "[E2E] Dup d757a8 Редактировать Удалить":
-        - cell "[E2E] Dup d757a8":
-          - paragraph: "[E2E] Dup d757a8"
-        - cell "Редактировать Удалить":
-          - button "Редактировать"
-          - button "Удалить"
-      - row "[E2E] Search e10114 Редактировать Удалить":
-        - cell "[E2E] Search e10114":
-          - paragraph: "[E2E] Search e10114"
-        - cell "Редактировать Удалить":
-          - button "Редактировать"
-          - button "Удалить"
-      - row "[E2E] Keep bae8d3 Редактировать Удалить":
-        - cell "[E2E] Keep bae8d3":
-          - paragraph: "[E2E] Keep bae8d3"
-        - cell "Редактировать Удалить":
-          - button "Редактировать"
-          - button "Удалить"
-      - row "[E2E] Init fc6839 (upd) Редактировать Удалить":
-        - cell "[E2E] Init fc6839 (upd)":
-          - paragraph: "[E2E] Init fc6839 (upd)"
-        - cell "Редактировать Удалить":
-          - button "Редактировать"
-          - button "Удалить"
-      - row "[E2E] Должн 39dec5 Редактировать Удалить":
-        - cell "[E2E] Должн 39dec5":
-          - paragraph: "[E2E] Должн 39dec5"
-        - cell "Редактировать Удалить":
-          - button "Редактировать"
-          - button "Удалить"
-      - row "'; DROP TABLE positions; -- Редактировать Удалить":
-        - cell "'; DROP TABLE positions; --":
-          - paragraph: "'; DROP TABLE positions; --"
-        - cell "Редактировать Удалить":
-          - button "Редактировать"
-          - button "Удалить"
-      - row "<script>alert(1)</script> Редактировать Удалить":
-        - cell "<script>alert(1)</script>":
-          - paragraph: <script>alert(1)</script>
-        - cell "Редактировать Удалить":
-          - button "Редактировать"
-          - button "Удалить"
-      - row "[E2E] Dup e35be1 Редактировать Удалить":
-        - cell "[E2E] Dup e35be1":
-          - paragraph: "[E2E] Dup e35be1"
-        - cell "Редактировать Удалить":
-          - button "Редактировать"
-          - button "Удалить"
-      - row "[E2E] Dup e35be1 Редактировать Удалить":
-        - cell "[E2E] Dup e35be1":
-          - paragraph: "[E2E] Dup e35be1"
-        - cell "Редактировать Удалить":
-          - button "Редактировать"
-          - button "Удалить"
-      - row "[E2E] Search cceefa Редактировать Удалить":
-        - cell "[E2E] Search cceefa":
-          - paragraph: "[E2E] Search cceefa"
-        - cell "Редактировать Удалить":
-          - button "Редактировать"
-          - button "Удалить"
-      - row "[E2E] Keep 8985ac Редактировать Удалить":
-        - cell "[E2E] Keep 8985ac":
-          - paragraph: "[E2E] Keep 8985ac"
-        - cell "Редактировать Удалить":
-          - button "Редактировать"
-          - button "Удалить"
-      - row "[E2E] Init b7574c (upd) Редактировать Удалить":
-        - cell "[E2E] Init b7574c (upd)":
-          - paragraph: "[E2E] Init b7574c (upd)"
-        - cell "Редактировать Удалить":
-          - button "Редактировать"
-          - button "Удалить"
   - paragraph: "Записей на странице:"
   - 'combobox "Записей на странице: 25"': "25"
-  - paragraph: 1–25 из 47
+  - paragraph: 1–25 из 63
   - button "Go to previous page" [disabled]
   - button "Go to next page"
 - region "Notifications alt+T"

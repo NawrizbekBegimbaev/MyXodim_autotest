@@ -1,7 +1,7 @@
 - heading "TeamQa" [level=6]
-- text: STIR 983154321
-- button "Yopish"
-- button "Yashirish"
+- text: ИНН 983154321
+- button "Свернуть"
+- button "Скрыть"
 - region "scrollable content":
   - navigation:
     - list:
@@ -52,13 +52,13 @@
   - textbox "Поиск по названию…"
   - button "Добавить филиал"
   - tablist:
-    - tab "Jadval" [selected]
-    - tab "Iyerarxiya"
+    - tab "Таблица" [selected]
+    - tab "Иерархия"
   - table:
     - rowgroup:
-      - row "Филиал Tur Отделы Пользователи Действия":
+      - row "Филиал Тип Отделы Пользователи Действия":
         - columnheader "Филиал"
-        - columnheader "Tur"
+        - columnheader "Тип"
         - columnheader "Отделы"
         - columnheader "Пользователи"
         - columnheader "Действия"

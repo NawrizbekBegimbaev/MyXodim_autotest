@@ -1,7 +1,7 @@
 - heading "TeamQa" [level=6]
-- text: STIR 983154321
-- button "Yopish"
-- button "Yashirish"
+- text: ИНН 983154321
+- button "Свернуть"
+- button "Скрыть"
 - region "scrollable content":
   - navigation:
     - list:

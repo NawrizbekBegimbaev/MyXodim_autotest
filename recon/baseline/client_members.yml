@@ -1,7 +1,7 @@
 - heading "TeamQa" [level=6]
-- text: STIR 983154321
-- button "Yopish"
-- button "Yashirish"
+- text: ИНН 983154321
+- button "Свернуть"
+- button "Скрыть"
 - region "scrollable content":
   - navigation:
     - list:
@@ -61,6 +61,158 @@
         - columnheader "Статус"
         - columnheader "Действия"
     - rowgroup:
+      - row "[E2E] Search 3e5734 Тест +998906417402 Сотрудник — Приглашён Редактировать Отключить":
+        - cell "[E2E] Search 3e5734 Тест":
+          - paragraph: "[E2E] Search 3e5734 Тест"
+        - cell "+998906417402":
+          - paragraph: "+998906417402"
+        - cell "Сотрудник":
+          - paragraph: Сотрудник
+        - cell "—":
+          - paragraph: —
+        - cell "Приглашён"
+        - cell "Редактировать Отключить":
+          - button "Редактировать"
+          - button "Отключить"
+      - row "[E2E] Search 76148c Тест +998906012700 Сотрудник — Приглашён Редактировать Отключить":
+        - cell "[E2E] Search 76148c Тест":
+          - paragraph: "[E2E] Search 76148c Тест"
+        - cell "+998906012700":
+          - paragraph: "+998906012700"
+        - cell "Сотрудник":
+          - paragraph: Сотрудник
+        - cell "—":
+          - paragraph: —
+        - cell "Приглашён"
+        - cell "Редактировать Отключить":
+          - button "Редактировать"
+          - button "Отключить"
+      - row "[E2E] Disable cedfae Тест +998904177095 Сотрудник — Отключён":
+        - cell "[E2E] Disable cedfae Тест":
+          - paragraph: "[E2E] Disable cedfae Тест"
+        - cell "+998904177095":
+          - paragraph: "+998904177095"
+        - cell "Сотрудник":
+          - paragraph: Сотрудник
+        - cell "—":
+          - paragraph: —
+        - cell "Отключён"
+        - cell
+      - row "[E2E] Keep 0229fa Тест +998903171770 Сотрудник — Приглашён Редактировать Отключить":
+        - cell "[E2E] Keep 0229fa Тест":
+          - paragraph: "[E2E] Keep 0229fa Тест"
+        - cell "+998903171770":
+          - paragraph: "+998903171770"
+        - cell "Сотрудник":
+          - paragraph: Сотрудник
+        - cell "—":
+          - paragraph: —
+        - cell "Приглашён"
+        - cell "Редактировать Отключить":
+          - button "Редактировать"
+          - button "Отключить"
+      - row "[E2E] Updated 2dc31a Тест +998901008404 Сотрудник — Приглашён Редактировать Отключить":
+        - cell "[E2E] Updated 2dc31a Тест":
+          - paragraph: "[E2E] Updated 2dc31a Тест"
+        - cell "+998901008404":
+          - paragraph: "+998901008404"
+        - cell "Сотрудник":
+          - paragraph: Сотрудник
+        - cell "—":
+          - paragraph: —
+        - cell "Приглашён"
+        - cell "Редактировать Отключить":
+          - button "Редактировать"
+          - button "Отключить"
+      - row "[E2E] Сотрудник 5b4aab Тестовый +998902124882 Сотрудник — Приглашён Редактировать Отключить":
+        - cell "[E2E] Сотрудник 5b4aab Тестовый":
+          - paragraph: "[E2E] Сотрудник 5b4aab Тестовый"
+        - cell "+998902124882":
+          - paragraph: "+998902124882"
+        - cell "Сотрудник":
+          - paragraph: Сотрудник
+        - cell "—":
+          - paragraph: —
+        - cell "Приглашён"
+        - cell "Редактировать Отключить":
+          - button "Редактировать"
+          - button "Отключить"
+      - row "[E2E] Search 693cfa Тест +998901603685 Сотрудник — Приглашён Редактировать Отключить":
+        - cell "[E2E] Search 693cfa Тест":
+          - paragraph: "[E2E] Search 693cfa Тест"
+        - cell "+998901603685":
+          - paragraph: "+998901603685"
+        - cell "Сотрудник":
+          - paragraph: Сотрудник
+        - cell "—":
+          - paragraph: —
+        - cell "Приглашён"
+        - cell "Редактировать Отключить":
+          - button "Редактировать"
+          - button "Отключить"
+      - row "[E2E] Search 427580 Тест +998908103633 Сотрудник — Приглашён Редактировать Отключить":
+        - cell "[E2E] Search 427580 Тест":
+          - paragraph: "[E2E] Search 427580 Тест"
+        - cell "+998908103633":
+          - paragraph: "+998908103633"
+        - cell "Сотрудник":
+          - paragraph: Сотрудник
+        - cell "—":
+          - paragraph: —
+        - cell "Приглашён"
+        - cell "Редактировать Отключить":
+          - button "Редактировать"
+          - button "Отключить"
+      - row "[E2E] Disable 3dbbe9 Тест +998902557521 Сотрудник — Отключён":
+        - cell "[E2E] Disable 3dbbe9 Тест":
+          - paragraph: "[E2E] Disable 3dbbe9 Тест"
+        - cell "+998902557521":
+          - paragraph: "+998902557521"
+        - cell "Сотрудник":
+          - paragraph: Сотрудник
+        - cell "—":
+          - paragraph: —
+        - cell "Отключён"
+        - cell
+      - row "[E2E] Keep 2a3ecc Тест +998905050519 Сотрудник — Приглашён Редактировать Отключить":
+        - cell "[E2E] Keep 2a3ecc Тест":
+          - paragraph: "[E2E] Keep 2a3ecc Тест"
+        - cell "+998905050519":
+          - paragraph: "+998905050519"
+        - cell "Сотрудник":
+          - paragraph: Сотрудник
+        - cell "—":
+          - paragraph: —
+        - cell "Приглашён"
+        - cell "Редактировать Отключить":
+          - button "Редактировать"
+          - button "Отключить"
+      - row "[E2E] Updated 1666b3 Тест +998904200972 Сотрудник — Приглашён Редактировать Отключить":
+        - cell "[E2E] Updated 1666b3 Тест":
+          - paragraph: "[E2E] Updated 1666b3 Тест"
+        - cell "+998904200972":
+          - paragraph: "+998904200972"
+        - cell "Сотрудник":
+          - paragraph: Сотрудник
+        - cell "—":
+          - paragraph: —
+        - cell "Приглашён"
+        - cell "Редактировать Отключить":
+          - button "Редактировать"
+          - button "Отключить"
+      - row "[E2E] Сотрудник 9fdc1d Тестовый +998901270819 Сотрудник — Приглашён Редактировать Отключить":
+        - cell "[E2E] Сотрудник 9fdc1d Тестовый":
+          - paragraph: "[E2E] Сотрудник 9fdc1d Тестовый"
+        - cell "+998901270819":
+          - paragraph: "+998901270819"
+        - cell "Сотрудник":
+          - paragraph: Сотрудник
+        - cell "—":
+          - paragraph: —
+        - cell "Приглашён"
+        - cell "Редактировать Отключить":
+          - button "Редактировать"
+          - button "Отключить"
       - row "[E2E] Search 2a3dd8 Тест +998908188963 Сотрудник — Приглашён Редактировать Отключить":
         - cell "[E2E] Search 2a3dd8 Тест":
           - paragraph: "[E2E] Search 2a3dd8 Тест"
@@ -224,163 +376,9 @@
           - paragraph: —
         - cell "Отключён"
         - cell
-      - row "[E2E] Keep b1b083 Тест +998908011512 Сотрудник — Приглашён Редактировать Отключить":
-        - cell "[E2E] Keep b1b083 Тест":
-          - paragraph: "[E2E] Keep b1b083 Тест"
-        - cell "+998908011512":
-          - paragraph: "+998908011512"
-        - cell "Сотрудник":
-          - paragraph: Сотрудник
-        - cell "—":
-          - paragraph: —
-        - cell "Приглашён"
-        - cell "Редактировать Отключить":
-          - button "Редактировать"
-          - button "Отключить"
-      - row "[E2E] Updated 971dc6 Тест +998905900619 Сотрудник — Приглашён Редактировать Отключить":
-        - cell "[E2E] Updated 971dc6 Тест":
-          - paragraph: "[E2E] Updated 971dc6 Тест"
-        - cell "+998905900619":
-          - paragraph: "+998905900619"
-        - cell "Сотрудник":
-          - paragraph: Сотрудник
-        - cell "—":
-          - paragraph: —
-        - cell "Приглашён"
-        - cell "Редактировать Отключить":
-          - button "Редактировать"
-          - button "Отключить"
-      - row "[E2E] Сотрудник 294c0a Тестовый +998902619256 Сотрудник — Приглашён Редактировать Отключить":
-        - cell "[E2E] Сотрудник 294c0a Тестовый":
-          - paragraph: "[E2E] Сотрудник 294c0a Тестовый"
-        - cell "+998902619256":
-          - paragraph: "+998902619256"
-        - cell "Сотрудник":
-          - paragraph: Сотрудник
-        - cell "—":
-          - paragraph: —
-        - cell "Приглашён"
-        - cell "Редактировать Отключить":
-          - button "Редактировать"
-          - button "Отключить"
-      - row "[E2E] Search c3b3f1 Тест +998901878081 Сотрудник — Приглашён Редактировать Отключить":
-        - cell "[E2E] Search c3b3f1 Тест":
-          - paragraph: "[E2E] Search c3b3f1 Тест"
-        - cell "+998901878081":
-          - paragraph: "+998901878081"
-        - cell "Сотрудник":
-          - paragraph: Сотрудник
-        - cell "—":
-          - paragraph: —
-        - cell "Приглашён"
-        - cell "Редактировать Отключить":
-          - button "Редактировать"
-          - button "Отключить"
-      - row "[E2E] Search 283bac Тест +998901073178 Сотрудник — Приглашён Редактировать Отключить":
-        - cell "[E2E] Search 283bac Тест":
-          - paragraph: "[E2E] Search 283bac Тест"
-        - cell "+998901073178":
-          - paragraph: "+998901073178"
-        - cell "Сотрудник":
-          - paragraph: Сотрудник
-        - cell "—":
-          - paragraph: —
-        - cell "Приглашён"
-        - cell "Редактировать Отключить":
-          - button "Редактировать"
-          - button "Отключить"
-      - row "[E2E] Disable 991c38 Тест +998904419711 Сотрудник — Отключён":
-        - cell "[E2E] Disable 991c38 Тест":
-          - paragraph: "[E2E] Disable 991c38 Тест"
-        - cell "+998904419711":
-          - paragraph: "+998904419711"
-        - cell "Сотрудник":
-          - paragraph: Сотрудник
-        - cell "—":
-          - paragraph: —
-        - cell "Отключён"
-        - cell
-      - row "[E2E] Keep 66dd82 Тест +998908158015 Сотрудник — Приглашён Редактировать Отключить":
-        - cell "[E2E] Keep 66dd82 Тест":
-          - paragraph: "[E2E] Keep 66dd82 Тест"
-        - cell "+998908158015":
-          - paragraph: "+998908158015"
-        - cell "Сотрудник":
-          - paragraph: Сотрудник
-        - cell "—":
-          - paragraph: —
-        - cell "Приглашён"
-        - cell "Редактировать Отключить":
-          - button "Редактировать"
-          - button "Отключить"
-      - row "[E2E] Updated bc9c9a Тест +998902115284 Сотрудник — Приглашён Редактировать Отключить":
-        - cell "[E2E] Updated bc9c9a Тест":
-          - paragraph: "[E2E] Updated bc9c9a Тест"
-        - cell "+998902115284":
-          - paragraph: "+998902115284"
-        - cell "Сотрудник":
-          - paragraph: Сотрудник
-        - cell "—":
-          - paragraph: —
-        - cell "Приглашён"
-        - cell "Редактировать Отключить":
-          - button "Редактировать"
-          - button "Отключить"
-      - row "[E2E] Search 198d3e Тест +998909327225 Сотрудник — Приглашён Редактировать Отключить":
-        - cell "[E2E] Search 198d3e Тест":
-          - paragraph: "[E2E] Search 198d3e Тест"
-        - cell "+998909327225":
-          - paragraph: "+998909327225"
-        - cell "Сотрудник":
-          - paragraph: Сотрудник
-        - cell "—":
-          - paragraph: —
-        - cell "Приглашён"
-        - cell "Редактировать Отключить":
-          - button "Редактировать"
-          - button "Отключить"
-      - row "[E2E] Сотрудник f5be68 Тестовый +998905382250 Сотрудник — Приглашён Редактировать Отключить":
-        - cell "[E2E] Сотрудник f5be68 Тестовый":
-          - paragraph: "[E2E] Сотрудник f5be68 Тестовый"
-        - cell "+998905382250":
-          - paragraph: "+998905382250"
-        - cell "Сотрудник":
-          - paragraph: Сотрудник
-        - cell "—":
-          - paragraph: —
-        - cell "Приглашён"
-        - cell "Редактировать Отключить":
-          - button "Редактировать"
-          - button "Отключить"
-      - row "[E2E] Search 3eb10b Тест +998901725750 Сотрудник — Приглашён Редактировать Отключить":
-        - cell "[E2E] Search 3eb10b Тест":
-          - paragraph: "[E2E] Search 3eb10b Тест"
-        - cell "+998901725750":
-          - paragraph: "+998901725750"
-        - cell "Сотрудник":
-          - paragraph: Сотрудник
-        - cell "—":
-          - paragraph: —
-        - cell "Приглашён"
-        - cell "Редактировать Отключить":
-          - button "Редактировать"
-          - button "Отключить"
-      - row "[E2E] Boundary <script>alert(1)</script> +998907942396 Сотрудник — Приглашён Редактировать Отключить":
-        - cell "[E2E] Boundary <script>alert(1)</script>":
-          - paragraph: "[E2E] Boundary <script>alert(1)</script>"
-        - cell "+998907942396":
-          - paragraph: "+998907942396"
-        - cell "Сотрудник":
-          - paragraph: Сотрудник
-        - cell "—":
-          - paragraph: —
-        - cell "Приглашён"
-        - cell "Редактировать Отключить":
-          - button "Редактировать"
-          - button "Отключить"
   - paragraph: "Записей на странице:"
   - 'combobox "Записей на странице: 25"': "25"
-  - paragraph: 1–25 из 44
+  - paragraph: 1–25 из 56
   - button "Go to previous page" [disabled]
   - button "Go to next page"
 - region "Notifications alt+T"

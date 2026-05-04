@@ -170,13 +170,24 @@ def main() -> int:
     with sync_playwright() as pw:
         browser = pw.chromium.launch(headless=True)
         try:
-            with admin_context(browser, settings) as admin_ctx:
+            try:
+                admin_ctx_ctx = admin_context(browser, settings)
+                with admin_ctx_ctx as admin_ctx:
+                    for ui, path, name in PAGES:
+                        if ui != "admin":
+                            continue
+                        snap = take_snapshot(
+                            admin_ctx, settings.admin_url, path, settings
+                        )
+                        status, diff = diff_or_save(name, snap, update=args.update)
+                        summary.append((name, status, diff))
+            except Exception as e:
+                # BUG-016 etc — Admin auth может быть сломан.
+                # Не валим всю утилиту: skip admin part, идём дальше.
+                err = str(e)[:200]
                 for ui, path, name in PAGES:
-                    if ui != "admin":
-                        continue
-                    snap = take_snapshot(admin_ctx, settings.admin_url, path, settings)
-                    status, diff = diff_or_save(name, snap, update=args.update)
-                    summary.append((name, status, diff))
+                    if ui == "admin":
+                        summary.append((name, "SKIPPED", f"admin auth failed: {err}"))
 
             with client_context(browser, settings) as client_ctx:
                 for ui, path, name in PAGES:

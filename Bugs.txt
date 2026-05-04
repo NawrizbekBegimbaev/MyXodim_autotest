@@ -536,9 +536,11 @@ BUG-013  FIXED     [2026-05-04] ИНН=14 → 500 не воспроизводи�
                    Source: TenantCreateRequest.tenantInn @Size(min=9,max=9)
                    String — Bean Validation, не Long → нет overflow path.
                    Frontend digitsOnly(value,9)+UZ_INN regex дополнительно.
-BUG-014  Minor     [2026-05-03] Mixed UZ/RU локаль на нескольких страницах в
-                   RU-контексте (Adminlar / Foydalanuvchilar / wizard вкладки
-                   Shablon bo'yicha-Erkin / Yopish-Yashirish и др.).
+BUG-014  PARTIAL   [2026-05-04] Mixed UZ/RU. CLIENT UI ЗАКРЫТ (Yopish/Yashirish
+                   → Свернуть/Скрыть, STIR → ИНН), 13 страниц recon показали
+                   корректную RU-локаль. ADMIN /admins (Adminlar/UZ-колонки)
+                   и wizard вкладки (Shablon bo'yicha/Erkin) пока открыты —
+                   2 xfail-стража в test_bug_regressions.py.
 BUG-015  FIXED     [2026-05-04] Admin UI canonicalize phone с `+998<9 цифр>`
                    (commit 646e016 / BHUB-96). Регрессия-страж в
                    tests/regression/test_bug_regressions.py.

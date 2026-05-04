@@ -67,20 +67,21 @@ def test_bug014_admins_columns_should_be_ru(
 
 
 @pytest.mark.regression
-@pytest.mark.xfail(
-    strict=True,
-    reason="BUG-014: sidebar header кнопки 'Yopish' / 'Yashirish' на UZ в RU UI. "
-    "Должны быть 'Закрыть' / 'Скрыть'.",
-)
-@allure.title("BUG-014: Client UI sidebar header — кнопки на RU")
+@allure.title("BUG-014 (PARTIAL FIX 2026-05-04): Client sidebar header кнопки на RU")
 def test_bug014_client_sidebar_header_buttons_ru(
     client_admin_page: Page, settings: Settings
 ) -> None:
+    """Бывший xfail. Закрыт серией i18n-коммитов на dev:
+    Yopish/Yashirish → Свернуть/Скрыть (фронт перевёл как 'collapse',
+    не буквальное 'close', поэтому regex принимает оба варианта).
+
+    BUG-014 на /admins (Adminlar/колонки) ещё открыт — этот тест
+    проверяет только Client UI sidebar, не весь BUG-014."""
     page = client_admin_page
     page.goto(f"{settings.client_url}/dashboard", wait_until="networkidle")
-    # Когда фикс — должны быть RU-варианты "Закрыть"/"Скрыть".
+    # Принимаем оба корректных RU-варианта: 'Свернуть' (collapse) или 'Закрыть' (close).
     expect(
-        page.get_by_role("button", name=re.compile(r"^(Закрыть|Скрыть)$"))
+        page.get_by_role("button", name=re.compile(r"^(Свернуть|Закрыть|Скрыть)$"))
     ).to_have_count(2, timeout=settings.expect_timeout)
 
 

@@ -1,7 +1,7 @@
 - heading "TeamQa" [level=6]
-- text: STIR 983154321
-- button "Yopish"
-- button "Yashirish"
+- text: ИНН 983154321
+- button "Свернуть"
+- button "Скрыть"
 - region "scrollable content":
   - navigation:
     - list:
@@ -31,7 +31,7 @@
   - paragraph: "+998913030519"
   - text: Администратор
 - main:
-  - heading "Xush kelibsiz, Наврузбек Бегимбаев" [level=1]
+  - heading "Добро пожаловать, Наврузбек Бегимбаев" [level=1]
   - paragraph: понедельник, 4 мая·Администратор
   - button "Создать документ"
   - group:
