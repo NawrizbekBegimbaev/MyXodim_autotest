@@ -544,3 +544,8 @@ BUG-016  Blocker   [2026-05-04] Super Admin admin123/+998991234567 даёт 401
                    на dev-стенде после deploy'а 137196d. Все Admin UI
                    тесты заблокированы. Нужны новые credentials либо
                    reseed admin-user.
+BUG-017  FIXED     [2026-05-04] Admin /tenants/new показывал "Компания создана"
+                   при 4xx/5xx — не воспроизводится. Подтверждено source-review:
+                   TenantCreateForm использует onSuccess/onError разветвление
+                   (success-state только на 2xx, иначе notifyApiError toast).
+                   Runtime-верификация отложена до фикса BUG-016.
