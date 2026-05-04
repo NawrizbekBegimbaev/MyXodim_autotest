@@ -249,8 +249,20 @@ Priority:           P0
        юзеров обращался к /api/v1/integrations/* за последние месяцы.
 
 ================================================================================
-BUG-012: POST /api/v1/integration/1c/job-titles/batch возвращает 500
-         при "Отправить все должности" из Mock 1C
+BUG-012 [FIXED 2026-05-04]: POST /api/v1/integration/1c/job-titles/batch
+                            больше не возвращает 500 (по dev-команде)
+================================================================================
+
+Закрыт фронт-командой / бэк-командой. Сами не верифицировали — оба
+покрывающих теста (test_admin_to_client_full_flow_no_eimzo,
+test_mock1c_send_all_positions_pushes_to_client) creates_data + блок
+BUG-016. Верифицируем после разморозки CRUD.
+
+Closed.
+
+
+================================================================================
+BUG-012 (ORIGINAL — для истории): POST .../job-titles/batch → 500
 ================================================================================
 
 Severity:           Major (block для главного E2E сценария)
@@ -517,8 +529,9 @@ BUG-007  FIXED     [2026-05-03] /tenants pagination починен (deep-link, c
                    selector). Регрессия с >25 компаний — TODO когда стенд наполнится.
 BUG-011  Critical  RBAC: прямой URL обходит ограничения меню. /integration
                    и админ-разделы открыты любой роли. Ключ 1С leaks.
-BUG-012  Major     [2026-04-30] POST /api/v1/integration/1c/job-titles/batch → 500
-                   при "Отправить все должности" из Mock 1C. Найдено strict-guard.
+BUG-012  FIXED     [2026-05-04] Mock 1C → BusinessHub batch-endpoint: 500
+                   больше не воспроизводится (по dev-команде). Верифицируем
+                   после разморозки CRUD-тестов.
 BUG-013  Minor     [2026-04-30] POST /api/v1/admin/tenants → 500 на ИНН=14 цифр
                    (на 10/15 цифр корректный 400). Найдено strict-guard.
 BUG-014  Minor     [2026-05-03] Mixed UZ/RU локаль на нескольких страницах в
