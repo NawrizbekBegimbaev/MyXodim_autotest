@@ -90,16 +90,16 @@ def test_bug014_client_sidebar_header_buttons_ru(
 
 
 @pytest.mark.regression
-@pytest.mark.xfail(
-    strict=True,
-    reason="BUG-015: Admin UI login отправляет phone без '+' префикса. "
-    "Должен быть '+998...', сейчас '998...'.",
-)
-@allure.title("BUG-015: Admin login phone в request body должен начинаться с '+'")
+@allure.title("BUG-015 (FIXED 2026-05-04): Admin login phone начинается с '+' в request body")
 def test_bug015_admin_login_request_phone_has_plus_prefix(
     page: Page, settings: Settings
 ) -> None:
-    """Перехватываем POST /admin/auth/login и читаем request body."""
+    """Бывший xfail. Закрыт коммитом 646e016 (BHUB-96 на dev) —
+    фронт canonicalize'ит phone в '+998<9 цифр>' перед отправкой.
+    Тест остался как regression-страж: если кто-то снова сломает
+    нормализацию, тест поймает.
+
+    Перехватываем POST /admin/auth/login и читаем request body."""
     captured: dict[str, str] = {}
 
     def _capture(request: Request) -> None:

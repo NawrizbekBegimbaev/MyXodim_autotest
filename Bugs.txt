@@ -365,7 +365,23 @@ Client UI:
 
 
 ================================================================================
-BUG-015: Admin UI Login отправляет phone БЕЗ `+` префикса (фронт-баг)
+BUG-015 [FIXED 2026-05-04]: Admin UI Login canonicalize'ит phone с `+`
+================================================================================
+
+Закрыт коммитом 646e016 в core/ ветке dev:
+    "fix(admin-ui): canonicalize phone to +998<9 digits>, cap input to 9 (BHUB-96)"
+
+Подтверждено: tests/regression/test_bug_regressions.py регрессионный
+тест ушёл из xfail в XPASS strict — фронт теперь шлёт правильный
+'+998991234567'. Тест остался страж — снят xfail, превращён в обычный
+assertion. Если фронт когда-нибудь снова сломает нормализацию,
+тест поймает.
+
+Закрыто.
+
+
+================================================================================
+BUG-015 (ORIGINAL — для истории): phone без `+` префикса
 ================================================================================
 
 Severity:           Major (блокирует логин на стандартном бэке)
@@ -434,6 +450,64 @@ Priority:           P1
 
 
 ================================================================================
+BUG-016: Super Admin auth не работает — admin123/+998991234567 даёт 401
+================================================================================
+
+Severity:           Blocker (полностью блокирует все Admin UI тесты + smoke)
+Priority:           P0
+Компонент:          Backend auth / dev-стенд seed
+Найдено:            2026-05-04 после pull ветки `dev` (cfa37ea..137196d)
+
+Описание:
+    После последнего deploy'а на dev-стенд (4 коммита: 053bef7
+    "Add backend environment configs", 53dfc68 "Improve Uzbek
+    localization coverage", 646e016 "fix(admin-ui): canonicalize phone",
+    137196d "i18n(admin-ui): translate hardcoded UI strings") логин
+    Super Admin перестал работать.
+
+    Phone +998991234567 (тот же что seedится в Liquibase changelog
+    backend/app/src/main/resources/db/changelog/seed/003-admin-user.xml)
+    + пароль admin123 (тот же что в seed: bcrypt of "admin123") →
+    401 Unauthorized.
+
+Шаги воспроизведения:
+    1. Open https://dev-hub-admin.greatmall.uz/login
+    2. Phone: 991234567 (или +998991234567 — фронт canonicalize'ит)
+    3. Password: admin123
+    4. Click "Войти"
+
+Ожидаемый результат:
+    Редирект на /dashboard.
+
+Фактический результат:
+    Остаётся на /login. POST /api/v1/admin/auth/login → 401.
+    Пробовали 5 паролей через прямой fetch:
+        admin123, admin, password, Admin123!, admin12345 — все 401.
+
+Возможные причины:
+    1. Пароль изменили на стенде вручную (rotated), без обновления seed.
+    2. Admin-user удалён / disabled в DB.
+    3. Phone в DB изменился (теперь не +998991234567).
+    4. Изменилась логика auth в коммитах — новый параметр обязательный.
+
+Влияние:
+    1. Все 130+ Admin UI тестов не могут запуститься (super_admin_state
+       fixture фейлится).
+    2. Все creates_data E2E тесты (создание компаний через Admin UI)
+       заблокированы.
+    3. mock1c_company / anchor_company / disable_target_company
+       fixture'ы тоже не работают.
+
+Что нужно от dev-команды:
+    1. Подтвердить актуальные credentials Super Admin'а на dev-стенде.
+    2. ИЛИ переcid'ить admin-user.xml seed заново.
+    3. ИЛИ задокументировать новый процесс получения admin-токена.
+
+Workaround для тестов:
+    Пока нет — без admin auth ничего критичного нельзя протестировать.
+
+
+================================================================================
 Сводка
 ================================================================================
 
@@ -450,9 +524,10 @@ BUG-013  Minor     [2026-04-30] POST /api/v1/admin/tenants → 500 на ИНН=1
 BUG-014  Minor     [2026-05-03] Mixed UZ/RU локаль на нескольких страницах в
                    RU-контексте (Adminlar / Foydalanuvchilar / wizard вкладки
                    Shablon bo'yicha-Erkin / Yopish-Yashirish и др.).
-BUG-015  Major     [2026-05-03] Admin UI шлёт phone без `+` префикса в
-                   POST /api/v1/admin/auth/login → "998991234567" вместо
-                   "+998991234567". Локальный бэк это отклоняет с 401, dev
-                   принимает (lenient). Воспроизведено через Playwright MCP
-                   network capture: request body "{\"phone\":\"998991234567\"...}".
-                   Фикс: либо фронт нормализует с `+998`, либо бэк lenient.
+BUG-015  FIXED     [2026-05-04] Admin UI canonicalize phone с `+998<9 цифр>`
+                   (commit 646e016 / BHUB-96). Регрессия-страж в
+                   tests/regression/test_bug_regressions.py.
+BUG-016  Blocker   [2026-05-04] Super Admin admin123/+998991234567 даёт 401
+                   на dev-стенде после deploy'а 137196d. Все Admin UI
+                   тесты заблокированы. Нужны новые credentials либо
+                   reseed admin-user.

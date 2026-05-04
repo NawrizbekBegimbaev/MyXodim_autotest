@@ -43,6 +43,50 @@ def settings() -> Settings:
     return Settings()
 
 
+# Init-скрипт принудительно ставит RU-локаль в localStorage до любой загрузки.
+# С 2026-05-04 фронт переехал на UZ default (commit 137196d) — без этого
+# скрипта все тесты, которые ассертят RU-тексты, ломаются.
+# Ключи: admin-lang (Admin UI), client-lang (Client UI). Фронт читает их
+# при init и применяет локаль.
+_FORCE_RU_LANG_SCRIPT = (
+    "try {"
+    "  localStorage.setItem('admin-lang', 'ru');"
+    "  localStorage.setItem('client-lang', 'ru');"
+    "} catch (e) { /* SecurityError on about:blank — игнор */ }"
+)
+
+
+@pytest.fixture(scope="session", autouse=True)
+def _force_ru_lang() -> Iterator[None]:
+    """Патчит Browser.new_context на всю сессию, чтобы каждый создаваемый
+    контекст автоматически получал init_script с
+    admin-lang=ru / client-lang=ru. Скрипт выполняется до любого app-кода
+    и обеспечивает RU-локаль независимо от дефолта стенда.
+
+    С 2026-05-04 фронт-команда переключила default на UZ — без этого
+    патча все RU-ассерты ломаются.
+    """
+    from playwright.sync_api._generated import (
+        Browser as _Browser,
+    )
+
+    original_new_context = _Browser.new_context
+
+    import contextlib  # noqa: PLC0415
+
+    def patched(self: Browser, **kwargs: Any) -> BrowserContext:
+        ctx = original_new_context(self, **kwargs)
+        with contextlib.suppress(Exception):
+            ctx.add_init_script(_FORCE_RU_LANG_SCRIPT)
+        return ctx
+
+    _Browser.new_context = patched  # type: ignore[method-assign]
+    try:
+        yield
+    finally:
+        _Browser.new_context = original_new_context  # type: ignore[method-assign]
+
+
 @pytest.fixture(scope="session")
 def browser_type_launch_args(browser_type_launch_args: dict[str, Any]) -> dict[str, Any]:
     """По умолчанию используем bundled Chromium (для smoke/CI).
