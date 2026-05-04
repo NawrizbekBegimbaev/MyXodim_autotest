@@ -18,7 +18,7 @@ from pages.admin.admins_page import AdminsPage
 
 
 @pytest.mark.positive
-@allure.title("/admins: heading 'Adminlar' и subtitle 'Platforma administratorlari'")
+@allure.title("/admins: heading 'Администраторы' + subtitle 'Администраторы платформы'")
 def test_admins_page_renders_heading(
     super_admin_context: BrowserContext, settings: Settings
 ) -> None:
@@ -30,7 +30,7 @@ def test_admins_page_renders_heading(
 
 
 @pytest.mark.positive
-@allure.title("/admins: кнопка 'Yangi admin' и поле поиска присутствуют")
+@allure.title("/admins: кнопка 'Новый администратор' и поле поиска присутствуют")
 def test_admins_page_has_add_button_and_search(
     super_admin_context: BrowserContext, settings: Settings
 ) -> None:
@@ -42,7 +42,7 @@ def test_admins_page_has_add_button_and_search(
 
 
 @pytest.mark.positive
-@allure.title("/admins: все 4 колонки таблицы присутствуют (UZ)")
+@allure.title("/admins: все 4 колонки таблицы присутствуют (RU)")
 @pytest.mark.parametrize("col_name", AdminsPage.COLUMNS)
 def test_admins_table_columns_present(
     super_admin_context: BrowserContext, settings: Settings, col_name: str
@@ -76,8 +76,7 @@ def test_admins_table_contains_super_admin(
     page = super_admin_context.new_page()
     page.goto(f"{settings.admin_url}/admins", wait_until="networkidle")
     admins = AdminsPage(page)
-    # Используем телефон как ключ — стабильнее имени (которое
-    # на UZ получается "Platform Admin(siz)").
+    # Используем телефон как ключ — стабильнее имени.
     expect(
         admins.row_by_phone(settings.super_admin_phone)
     ).to_be_visible(timeout=settings.expect_timeout)
@@ -101,13 +100,13 @@ def test_admins_search_empty_match_shows_no_rows(
 
 @pytest.mark.rbac
 @pytest.mark.positive
-@allure.title("/admins: sidebar содержит ссылку 'Adminlar'")
+@allure.title("/admins: sidebar содержит ссылку 'Администраторы'")
 def test_admins_sidebar_link_present(
     super_admin_context: BrowserContext, settings: Settings
 ) -> None:
     page = super_admin_context.new_page()
     page.goto(f"{settings.admin_url}/dashboard", wait_until="networkidle")
     nav = page.get_by_role("navigation").first
-    expect(nav.get_by_role("link", name="Adminlar", exact=True)).to_be_visible(
-        timeout=settings.expect_timeout
-    )
+    expect(
+        nav.get_by_role("link", name="Администраторы", exact=True)
+    ).to_be_visible(timeout=settings.expect_timeout)

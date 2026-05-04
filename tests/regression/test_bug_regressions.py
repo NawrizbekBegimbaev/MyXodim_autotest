@@ -27,18 +27,14 @@ from pages.admin.login_page import AdminLoginPage
 
 
 @pytest.mark.regression
-@pytest.mark.xfail(
-    strict=True,
-    reason="BUG-014: heading /admins на UZ ('Adminlar') в RU-локали. "
-    "Должен быть 'Администраторы' или эквивалент.",
-)
-@allure.title("BUG-014: /admins — heading должен быть на RU, не UZ")
+@allure.title("BUG-014 (FIXED 2026-05-04): /admins heading на RU 'Администраторы'")
 def test_bug014_admins_heading_should_be_ru(
     super_admin_context: BrowserContext, settings: Settings
 ) -> None:
+    """Бывший xfail. Закрыт в i18n-batch коммитах: Adminlar → Администраторы.
+    Тест остался регрессионным стражем."""
     page = super_admin_context.new_page()
     page.goto(f"{settings.admin_url}/admins", wait_until="networkidle")
-    # Когда BUG-014 пофиксят — будет heading на RU. Сейчас "Adminlar".
     expect(
         page.get_by_role("heading", level=4).filter(
             has_text=re.compile(r"^Администратор", re.IGNORECASE)
@@ -47,19 +43,15 @@ def test_bug014_admins_heading_should_be_ru(
 
 
 @pytest.mark.regression
-@pytest.mark.xfail(
-    strict=True,
-    reason="BUG-014: колонки таблицы /admins на UZ (Ism/Telefon/Holat/Yaratilgan). "
-    "Должны быть на RU.",
-)
-@allure.title("BUG-014: /admins — колонки должны быть на RU")
+@allure.title("BUG-014 (FIXED 2026-05-04): /admins колонки на RU")
 def test_bug014_admins_columns_should_be_ru(
     super_admin_context: BrowserContext, settings: Settings
 ) -> None:
+    """Бывший xfail. Колонки переведены: Ism/Telefon/Holat/Yaratilgan
+    → Имя/Телефон/Статус/Создан."""
     page = super_admin_context.new_page()
     page.goto(f"{settings.admin_url}/admins", wait_until="networkidle")
     table = page.get_by_role("table").first
-    # Хотя бы одна RU-колонка должна быть. Сейчас все UZ → fail → xfail.
     for ru_col in ("Имя", "Телефон", "Статус", "Создан"):
         expect(table.get_by_role("columnheader", name=ru_col, exact=True)).to_be_visible(
             timeout=settings.expect_timeout

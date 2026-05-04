@@ -27,7 +27,11 @@ class AdminLoginPage(BasePage):
         self._submit: Locator = page.get_by_role("button", name=t("login.admin.submit"))
 
     def enter_credentials(self, phone: str, password: str) -> Self:
-        self._phone_input.fill(phone)
+        # После BUG-015 fix фронт canonicalize'ит phone в '+998<9 цифр>'.
+        # Input ограничен 9 цифрами (digitsOnly + maxLength=9), поэтому
+        # передаём только локальную часть. Если получили "+998..." — strip.
+        local_phone = phone.removeprefix("+998")
+        self._phone_input.fill(local_phone)
         self._password_input.fill(password)
         return self
 

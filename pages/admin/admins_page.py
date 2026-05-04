@@ -1,8 +1,7 @@
 """Admin UI: раздел /admins (платформенные администраторы).
 
-Появился 2026-05-03. Heading и колонки на UZ ("Adminlar", "Ism", "Telefon",
-"Holat", "Yaratilgan") даже когда выбрана RU-локаль — это bug-candidate
-по mixed-locale, но для PoM фиксируем что есть.
+Появился 2026-05-03. С 2026-05-04 переведён на RU
+(BUG-014 закрыт): Администраторы / Имя / Телефон / Статус / Создан.
 """
 
 from __future__ import annotations
@@ -17,22 +16,22 @@ from pages.base_page import BasePage
 class AdminsPage(BasePage):
     URL_PATH = "/admins"
 
-    # Колонки таблицы — UZ-имена в RU контексте.
-    COLUMNS: tuple[str, ...] = ("Ism", "Telefon", "Holat", "Yaratilgan")
+    # Колонки таблицы (RU после i18n-фикса).
+    COLUMNS: tuple[str, ...] = ("Имя", "Телефон", "Статус", "Создан")
 
     def __init__(self, page: Page) -> None:
         super().__init__(page)
         self._heading: Locator = page.get_by_role(
-            "heading", name="Adminlar", level=4
+            "heading", name="Администраторы", level=4
         )
         self._subtitle: Locator = page.get_by_text(
-            "Platforma administratorlari"
+            "Администраторы платформы"
         )
         self._add_button: Locator = page.get_by_role(
-            "button", name="Yangi admin"
+            "button", name="Новый администратор"
         )
         self._search_input: Locator = page.get_by_role(
-            "textbox", name="Qidirish..."
+            "textbox", name="Поиск..."
         )
         self._table: Locator = page.get_by_role("table").first
 

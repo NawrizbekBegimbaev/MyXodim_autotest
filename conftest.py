@@ -262,9 +262,11 @@ def super_admin_state(
         settings.super_admin_phone, settings.super_admin_password
     )
     page.wait_for_url(re.compile(r"^(?!.*\blogin\b).*"), timeout=settings.nav_timeout)
-    _expect(page.get_by_role("heading", name="Admin User")).to_be_visible(
-        timeout=settings.nav_timeout
-    )
+    # Имя в header-карточке теперь динамическое (берётся из /users/me),
+    # не hardcoded "Admin User" — поэтому ждём BusinessHub h6 (стабильное).
+    _expect(
+        page.get_by_role("heading", name="BusinessHub", level=6).first
+    ).to_be_visible(timeout=settings.nav_timeout)
     page.wait_for_load_state("networkidle", timeout=settings.nav_timeout)
     ctx.storage_state(path=state_path)
     ctx.close()
