@@ -151,9 +151,10 @@ _RU: Final[dict[str, str]] = {
     "client.documents.create_button": "Создать документ",
     "client.documents.create_page_title": "Создать новый документ",
     "client.documents.create_back": "Назад",
-    # 2026-05-03: вкладки в wizard'е переехали на UZ (mixed-locale в RU UI).
-    "client.documents.tab_template": "Shablon bo'yicha",
-    "client.documents.tab_freeform": "Erkin",
+    # 2026-05-04: фронт-команда вернула вкладки на RU (i18n batch коммиты
+    # 0d9e06c..1ebb276 на dev). Закрытие части BUG-014.
+    "client.documents.tab_template": "По шаблону",
+    "client.documents.tab_freeform": "Свободный",
     "client.documents.next_button": "Далее",
     "client.documents.cancel_button": "Отмена",
     "client.documents.field_title": "Заголовок",

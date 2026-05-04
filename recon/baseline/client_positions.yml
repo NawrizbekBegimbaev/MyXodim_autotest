@@ -48,7 +48,7 @@
   - text: Администратор
 - main:
   - heading "Должности" [level=4]
-  - paragraph: Всего 63 должностей
+  - paragraph: Всего 71 должностей
   - button "Добавить должность"
   - textbox "Поиск по названию..."
   - table:
@@ -57,6 +57,54 @@
         - columnheader "Название должности"
         - columnheader "Действия"
     - rowgroup:
+      - row "'; DROP TABLE positions; -- Редактировать Удалить":
+        - cell "'; DROP TABLE positions; --":
+          - paragraph: "'; DROP TABLE positions; --"
+        - cell "Редактировать Удалить":
+          - button "Редактировать"
+          - button "Удалить"
+      - row "<script>alert(1)</script> Редактировать Удалить":
+        - cell "<script>alert(1)</script>":
+          - paragraph: <script>alert(1)</script>
+        - cell "Редактировать Удалить":
+          - button "Редактировать"
+          - button "Удалить"
+      - row "[E2E] Dup ff7be2 Редактировать Удалить":
+        - cell "[E2E] Dup ff7be2":
+          - paragraph: "[E2E] Dup ff7be2"
+        - cell "Редактировать Удалить":
+          - button "Редактировать"
+          - button "Удалить"
+      - row "[E2E] Dup ff7be2 Редактировать Удалить":
+        - cell "[E2E] Dup ff7be2":
+          - paragraph: "[E2E] Dup ff7be2"
+        - cell "Редактировать Удалить":
+          - button "Редактировать"
+          - button "Удалить"
+      - row "[E2E] Search f36167 Редактировать Удалить":
+        - cell "[E2E] Search f36167":
+          - paragraph: "[E2E] Search f36167"
+        - cell "Редактировать Удалить":
+          - button "Редактировать"
+          - button "Удалить"
+      - row "[E2E] Keep 5b9dc3 Редактировать Удалить":
+        - cell "[E2E] Keep 5b9dc3":
+          - paragraph: "[E2E] Keep 5b9dc3"
+        - cell "Редактировать Удалить":
+          - button "Редактировать"
+          - button "Удалить"
+      - row "[E2E] Init cf7d06 (upd) Редактировать Удалить":
+        - cell "[E2E] Init cf7d06 (upd)":
+          - paragraph: "[E2E] Init cf7d06 (upd)"
+        - cell "Редактировать Удалить":
+          - button "Редактировать"
+          - button "Удалить"
+      - row "[E2E] Должн 65a061 Редактировать Удалить":
+        - cell "[E2E] Должн 65a061":
+          - paragraph: "[E2E] Должн 65a061"
+        - cell "Редактировать Удалить":
+          - button "Редактировать"
+          - button "Удалить"
       - row "'; DROP TABLE positions; -- Редактировать Удалить":
         - cell "'; DROP TABLE positions; --":
           - paragraph: "'; DROP TABLE positions; --"
@@ -159,57 +207,9 @@
         - cell "Редактировать Удалить":
           - button "Редактировать"
           - button "Удалить"
-      - row "<script>alert(1)</script> Редактировать Удалить":
-        - cell "<script>alert(1)</script>":
-          - paragraph: <script>alert(1)</script>
-        - cell "Редактировать Удалить":
-          - button "Редактировать"
-          - button "Удалить"
-      - row "[E2E] Dup 3e91f3 Редактировать Удалить":
-        - cell "[E2E] Dup 3e91f3":
-          - paragraph: "[E2E] Dup 3e91f3"
-        - cell "Редактировать Удалить":
-          - button "Редактировать"
-          - button "Удалить"
-      - row "[E2E] Dup 3e91f3 Редактировать Удалить":
-        - cell "[E2E] Dup 3e91f3":
-          - paragraph: "[E2E] Dup 3e91f3"
-        - cell "Редактировать Удалить":
-          - button "Редактировать"
-          - button "Удалить"
-      - row "[E2E] Search b6f4cd Редактировать Удалить":
-        - cell "[E2E] Search b6f4cd":
-          - paragraph: "[E2E] Search b6f4cd"
-        - cell "Редактировать Удалить":
-          - button "Редактировать"
-          - button "Удалить"
-      - row "[E2E] Keep cbc787 Редактировать Удалить":
-        - cell "[E2E] Keep cbc787":
-          - paragraph: "[E2E] Keep cbc787"
-        - cell "Редактировать Удалить":
-          - button "Редактировать"
-          - button "Удалить"
-      - row "[E2E] Init 177f57 (upd) Редактировать Удалить":
-        - cell "[E2E] Init 177f57 (upd)":
-          - paragraph: "[E2E] Init 177f57 (upd)"
-        - cell "Редактировать Удалить":
-          - button "Редактировать"
-          - button "Удалить"
-      - row "[E2E] Должн 91f481 Редактировать Удалить":
-        - cell "[E2E] Должн 91f481":
-          - paragraph: "[E2E] Должн 91f481"
-        - cell "Редактировать Удалить":
-          - button "Редактировать"
-          - button "Удалить"
-      - row "'; DROP TABLE positions; -- Редактировать Удалить":
-        - cell "'; DROP TABLE positions; --":
-          - paragraph: "'; DROP TABLE positions; --"
-        - cell "Редактировать Удалить":
-          - button "Редактировать"
-          - button "Удалить"
   - paragraph: "Записей на странице:"
   - 'combobox "Записей на странице: 25"': "25"
-  - paragraph: 1–25 из 63
+  - paragraph: 1–25 из 71
   - button "Go to previous page" [disabled]
   - button "Go to next page"
 - region "Notifications alt+T"

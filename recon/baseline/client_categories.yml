@@ -34,6 +34,18 @@
   - heading "Категории" [level=4]
   - paragraph: 10 категорий, 0 документов
   - button "Добавить категорию"
+  - paragraph: "[E2E] Cat f38ce8"
+  - heading "0" [level=5]
+  - text: Документы
+  - paragraph: "'; DROP TABLE categories; --"
+  - heading "0" [level=5]
+  - text: Документы
+  - paragraph: <script>alert(1)</script>
+  - heading "0" [level=5]
+  - text: Документы
+  - paragraph: "[E2E] Parent 02b073"
+  - heading "1" [level=5]
+  - text: Документы
   - paragraph: "[E2E] Cat a68a8f"
   - heading "0" [level=5]
   - text: Документы
@@ -46,19 +58,17 @@
   - paragraph: "[E2E] Parent 601a4b"
   - heading "1" [level=5]
   - text: Документы
-  - paragraph: "[E2E] Cat 00f314"
-  - heading "0" [level=5]
-  - text: Документы
-  - paragraph: "'; DROP TABLE categories; --"
-  - heading "0" [level=5]
-  - text: Документы
-  - paragraph: <script>alert(1)</script>
-  - heading "0" [level=5]
-  - text: Документы
-  - paragraph: "[E2E] Parent 45da1a"
-  - heading "1" [level=5]
-  - text: Документы
   - heading "Древовидная структура" [level=6]
+  - paragraph: "[E2E] Cat f38ce8"
+  - button "Редактировать"
+  - paragraph: "'; DROP TABLE categories; --"
+  - button "Редактировать"
+  - paragraph: <script>alert(1)</script>
+  - button "Редактировать"
+  - paragraph: "[E2E] Parent 02b073"
+  - button "Редактировать"
+  - paragraph: "[E2E] Child 34a27c"
+  - button "Редактировать"
   - paragraph: "[E2E] Cat a68a8f"
   - button "Редактировать"
   - paragraph: "'; DROP TABLE categories; --"
@@ -68,15 +78,5 @@
   - paragraph: "[E2E] Parent 601a4b"
   - button "Редактировать"
   - paragraph: "[E2E] Child 800f63"
-  - button "Редактировать"
-  - paragraph: "[E2E] Cat 00f314"
-  - button "Редактировать"
-  - paragraph: "'; DROP TABLE categories; --"
-  - button "Редактировать"
-  - paragraph: <script>alert(1)</script>
-  - button "Редактировать"
-  - paragraph: "[E2E] Parent 45da1a"
-  - button "Редактировать"
-  - paragraph: "[E2E] Child 37fbc1"
   - button "Редактировать"
 - region "Notifications alt+T"
