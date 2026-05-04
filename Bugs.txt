@@ -532,8 +532,10 @@ BUG-011  Critical  RBAC: прямой URL обходит ограничения 
 BUG-012  FIXED     [2026-05-04] Mock 1C → BusinessHub batch-endpoint: 500
                    больше не воспроизводится (по dev-команде). Верифицируем
                    после разморозки CRUD-тестов.
-BUG-013  Minor     [2026-04-30] POST /api/v1/admin/tenants → 500 на ИНН=14 цифр
-                   (на 10/15 цифр корректный 400). Найдено strict-guard.
+BUG-013  FIXED     [2026-05-04] ИНН=14 → 500 не воспроизводится.
+                   Source: TenantCreateRequest.tenantInn @Size(min=9,max=9)
+                   String — Bean Validation, не Long → нет overflow path.
+                   Frontend digitsOnly(value,9)+UZ_INN regex дополнительно.
 BUG-014  Minor     [2026-05-03] Mixed UZ/RU локаль на нескольких страницах в
                    RU-контексте (Adminlar / Foydalanuvchilar / wizard вкладки
                    Shablon bo'yicha-Erkin / Yopish-Yashirish и др.).
