@@ -1,10 +1,4 @@
-"""Структурные тесты страницы /documents (read-only, без CRUD).
-
-Проверяем что после редизайна 2026-05-03 на месте:
-- 8 табов статусов (включая 3 новых: В архиве, Отправлен в 1С, Ошибка выгрузки)
-- 7 колонок таблицы (включая 2 новых: Откуда, Куда)
-- pagination control (ввод страницы, выбор размера)
-"""
+"""Структурные тесты страницы /documents (read-only, без CRUD)."""
 
 from __future__ import annotations
 
@@ -31,19 +25,19 @@ def test_documents_page_renders_heading_and_create(
 
 
 @pytest.mark.positive
-@allure.title("/documents: все 8 статус-табов видны")
-@pytest.mark.parametrize("tab_name", DocumentsPage.STATUS_TABS)
-def test_documents_status_tabs_present(
-    client_admin_page: Page, settings: Settings, tab_name: str
+@allure.title("/documents: view-toggle Канбан/Таблица виден")
+def test_documents_view_toggle_present(
+    client_admin_page: Page, settings: Settings
 ) -> None:
     page = client_admin_page
     page.goto(f"{settings.client_url}/documents", wait_until="networkidle")
     docs = DocumentsPage(page)
-    expect(docs.tab(tab_name)).to_be_visible(timeout=settings.expect_timeout)
+    expect(docs.kanban_button).to_be_visible(timeout=settings.expect_timeout)
+    expect(docs.table_button).to_be_visible(timeout=settings.expect_timeout)
 
 
 @pytest.mark.positive
-@allure.title("/documents: все 7 колонок таблицы присутствуют")
+@allure.title("/documents: все 6 колонок таблицы присутствуют")
 @pytest.mark.parametrize("col_name", DocumentsPage.COLUMNS)
 def test_documents_table_columns_present(
     client_admin_page: Page, settings: Settings, col_name: str
@@ -55,40 +49,41 @@ def test_documents_table_columns_present(
 
 
 @pytest.mark.positive
-@allure.title("/documents: tab 'Все' выбран по умолчанию")
-def test_documents_default_tab_is_all(
+@allure.title("/documents: table view можно выбрать")
+def test_documents_can_switch_to_table(
     client_admin_page: Page, settings: Settings
 ) -> None:
     page = client_admin_page
     page.goto(f"{settings.client_url}/documents", wait_until="networkidle")
     docs = DocumentsPage(page)
-    expect(docs.tab("Все")).to_have_attribute("aria-selected", "true")
+    docs.switch_to_table()
+    expect(docs.table_button).to_have_attribute(
+        "aria-pressed", "true", timeout=settings.expect_timeout
+    )
 
 
 @pytest.mark.positive
-@allure.title("/documents URL: query-параметры page/size/status присутствуют")
+@allure.title("/documents URL: view query-param присутствует")
 def test_documents_url_has_query_params(
     client_admin_page: Page, settings: Settings
 ) -> None:
     page = client_admin_page
     page.goto(f"{settings.client_url}/documents", wait_until="networkidle")
-    # после редизайна страница сама добавляет дефолтные query-params:
-    # /documents?page=1&size=25&status=all (порядок параметров может меняться)
     expect(page).to_have_url(
-        re.compile(r"/documents\?(?=.*page=)(?=.*size=)(?=.*status=)"),
+        re.compile(r"/documents(?:\?.*view=)?"),
         timeout=settings.nav_timeout,
     )
 
 
 @pytest.mark.positive
-@allure.title("/documents: переключение на таб 'Черновик' меняет URL status=draft")
-def test_documents_clicking_draft_tab_updates_url(
+@allure.title("/documents: переключение на kanban view")
+def test_documents_clicking_kanban_updates_pressed_state(
     client_admin_page: Page, settings: Settings
 ) -> None:
     page = client_admin_page
     page.goto(f"{settings.client_url}/documents", wait_until="networkidle")
     docs = DocumentsPage(page)
-    docs.tab("Черновик").click()
-    expect(docs.tab("Черновик")).to_have_attribute(
-        "aria-selected", "true", timeout=settings.expect_timeout
+    docs.switch_to_kanban()
+    expect(docs.kanban_button).to_have_attribute(
+        "aria-pressed", "true", timeout=settings.expect_timeout
     )

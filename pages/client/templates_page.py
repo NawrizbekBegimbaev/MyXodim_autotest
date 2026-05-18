@@ -17,6 +17,10 @@ class TemplatesPage(BasePage):
         self._add_button: Locator = page.get_by_role(
             "button", name=t("client.templates.add_button")
         )
+        self._search: Locator = page.get_by_placeholder(
+            t("client.templates.search_placeholder")
+        )
+        self._table: Locator = page.get_by_role("main").get_by_role("table")
 
     @property
     def heading(self) -> Locator:
@@ -25,6 +29,14 @@ class TemplatesPage(BasePage):
     @property
     def add_button(self) -> Locator:
         return self._add_button
+
+    @property
+    def search_input(self) -> Locator:
+        return self._search
+
+    @property
+    def table(self) -> Locator:
+        return self._table
 
     def click_add(self) -> Self:
         self._add_button.click()

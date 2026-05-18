@@ -12,6 +12,14 @@ class RoutesPage(BasePage):
     """Список маршрутов /routes."""
 
     URL_PATH = "/routes"
+    COLUMNS: tuple[str, ...] = (
+        "Название",
+        "Шаги",
+        "Статус",
+        "Version",
+        "Последнее изменение",
+        "Действия",
+    )
 
     def __init__(self, page: Page) -> None:
         super().__init__(page)
@@ -37,6 +45,13 @@ class RoutesPage(BasePage):
     @property
     def table(self) -> Locator:
         return self._table
+
+    @property
+    def search_input(self) -> Locator:
+        return self._search
+
+    def column_header(self, name: str) -> Locator:
+        return self._table.get_by_role("columnheader", name=name, exact=True)
 
     def click_create(self) -> Self:
         self._create_button.click()

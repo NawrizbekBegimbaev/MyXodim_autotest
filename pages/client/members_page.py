@@ -66,3 +66,16 @@ class MembersPage(BasePage):
     def status_cell_for_phone(self, phone: str) -> Locator:
         """Ячейка статуса в строке (колонка Статус)."""
         return self.row_by_phone(phone).get_by_role("cell").nth(4)
+
+    def disable_button_for_phone(self, phone: str) -> Locator:
+        return self.row_by_phone(phone).get_by_role(
+            "button", name=t("client.members.row_action_disable")
+        )
+
+    def is_disable_button_disabled_for_phone(self, phone: str) -> Locator:
+        return self.disable_button_for_phone(phone)
+
+    def disable_self_tooltip(self) -> Locator:
+        return self.page.get_by_text(
+            t("client.members.tooltip_cant_disable_self"), exact=True
+        )

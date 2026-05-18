@@ -47,6 +47,11 @@ class OrganizationPage(BasePage):
     def tab(self, name: str) -> Locator:
         return self._tablist.get_by_role("tab", name=name, exact=True)
 
+    def tenant_id_text(self) -> Locator:
+        return self.page.get_by_text(
+            t("client.organization.label_tenant_id"), exact=True
+        ).locator("..")
+
 
 class IntegrationPage(BasePage):
     """Hub-страница интеграций. Heading "Интеграция", карточки 1C/Bitrix24/Налоговая.
@@ -56,6 +61,7 @@ class IntegrationPage(BasePage):
     """
 
     URL_PATH = "/integration"
+    STATUS_TABS: tuple[str, ...] = ("Все", "Подключено", "Не подключено")
     PROVIDERS: tuple[str, ...] = ("1C", "Bitrix24", "Налоговая система")
 
     def __init__(self, page: Page) -> None:
@@ -64,6 +70,16 @@ class IntegrationPage(BasePage):
             "heading", name="Интеграция", level=4
         )
         self._tablist: Locator = page.get_by_role("tablist").first
+        self._tab_all: Locator = page.get_by_role("tab", name="Все", exact=True)
+        self._tab_connected: Locator = page.get_by_role(
+            "tab", name="Подключено", exact=True
+        )
+        self._tab_disconnected: Locator = page.get_by_role(
+            "tab", name="Не подключено", exact=True
+        )
+        self._configure_1c: Locator = page.get_by_role(
+            "button", name="Настроить", exact=True
+        )
 
     @property
     def heading(self) -> Locator:
@@ -83,12 +99,32 @@ class IntegrationPage(BasePage):
         # она единственная (Bitrix24/Налоговая помечены "Скоро" и не имеют кнопки).
         return self.page.get_by_role("button", name="Настроить", exact=True)
 
+    @property
+    def configure_1c_button(self) -> Locator:
+        return self._configure_1c
+
+    def status_tab(self, name: str) -> Locator:
+        return self._tablist.get_by_role("tab", name=name, exact=True)
+
+    def modal_1c(self) -> Locator:
+        return self.page.get_by_role("dialog").filter(
+            has=self.page.get_by_role("heading", name="1C", level=6)
+        )
+
+    def modal_show_button(self) -> Locator:
+        return self.modal_1c().get_by_role("button", name="Показать", exact=True)
+
+    def modal_copy_button(self) -> Locator:
+        return self.modal_1c().get_by_role("button", name="Скопировать", exact=True)
+
+    def modal_key_masked(self) -> Locator:
+        return self.modal_1c().get_by_text("•" * 32, exact=False)
+
 
 class OrgPositionsPage(BasePage):
     """Штатные позиции.
 
-    С 2026-05-03 — поддерживает ручное создание (была 1C-only).
-    Alert "Создание позиций выполняется через интеграцию с 1С" удалён.
+    С 2026-05-18 штатные позиции снова создаются только через 1С.
     """
 
     URL_PATH = "/org-positions"
@@ -98,7 +134,7 @@ class OrgPositionsPage(BasePage):
         "Отдел",
         "Должность",
         "Сотрудники",
-        "При вакантности",
+        "Источник",
         "Действия",
     )
 
@@ -109,8 +145,8 @@ class OrgPositionsPage(BasePage):
         self._heading: Locator = page.get_by_role(
             "heading", name=t("client.org_positions.title"), level=4
         )
-        self._add_button: Locator = page.get_by_role(
-            "button", name="+ Добавить позицию"
+        self._alert_1c_only: Locator = page.get_by_text(
+            t("client.org_positions.alert_1c_only"), exact=True
         )
         self._search_input: Locator = page.get_by_role(
             "textbox", name="Поиск по названию…"
@@ -123,8 +159,8 @@ class OrgPositionsPage(BasePage):
         return self._heading
 
     @property
-    def add_button(self) -> Locator:
-        return self._add_button
+    def alert_1c_only(self) -> Locator:
+        return self._alert_1c_only
 
     @property
     def search_input(self) -> Locator:

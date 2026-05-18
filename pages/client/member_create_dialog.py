@@ -12,26 +12,29 @@ class MemberCreateDialog(BasePage):
     def __init__(self, page: Page) -> None:
         super().__init__(page)
         self._dialog: Locator = page.get_by_role("dialog", name=t("client.members.dialog_title"))
-        self._first_name: Locator = self._dialog.get_by_role(
-            "textbox", name=t("client.members.field_first_name")
+        self._first_name: Locator = self._dialog.get_by_label(
+            t("client.members.field_first_name"), exact=False
         )
-        self._last_name: Locator = self._dialog.get_by_role(
-            "textbox", name=t("client.members.field_last_name")
+        self._last_name: Locator = self._dialog.get_by_label(
+            t("client.members.field_last_name"), exact=False
         )
-        self._middle_name: Locator = self._dialog.get_by_role(
-            "textbox", name=t("client.members.field_middle_name")
+        self._middle_name: Locator = self._dialog.get_by_label(
+            t("client.members.field_middle_name"), exact=True
         )
-        self._phone: Locator = self._dialog.get_by_role(
-            "textbox", name=t("client.members.field_phone")
+        self._phone: Locator = self._dialog.get_by_label(
+            t("client.members.field_phone"), exact=False
         )
-        self._pinfl: Locator = self._dialog.get_by_role(
-            "textbox", name=t("client.members.field_pinfl")
+        self._pinfl: Locator = self._dialog.get_by_label(
+            t("client.members.field_pinfl"), exact=True
         )
         self._role: Locator = self._dialog.get_by_role(
-            "combobox", name=t("client.members.field_role")
+            "combobox", name=t("client.members.field_role"), exact=False
         )
         self._position: Locator = self._dialog.get_by_role(
-            "combobox", name=t("client.members.field_position")
+            "combobox", name=t("client.members.field_position"), exact=True
+        )
+        self._department: Locator = self._dialog.get_by_role(
+            "combobox", name=t("client.members.field_department"), exact=True
         )
         self._submit: Locator = self._dialog.get_by_role(
             "button", name=t("client.members.dialog_submit")
@@ -71,6 +74,13 @@ class MemberCreateDialog(BasePage):
 
     def select_position(self, label: str) -> Self:
         self._position.click()
+        self.page.get_by_role("listbox").get_by_role(
+            "option", name=label, exact=True
+        ).click()
+        return self
+
+    def select_department(self, label: str) -> Self:
+        self._department.click()
         self.page.get_by_role("listbox").get_by_role(
             "option", name=label, exact=True
         ).click()

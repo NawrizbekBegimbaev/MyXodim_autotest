@@ -114,14 +114,13 @@ def test_integration_hub_has_filter_tabs(
 
 
 @pytest.mark.positive
-@allure.title("Org-positions: 2026-05-03 ручное создание разрешено — есть кнопка добавить")
-def test_org_positions_has_add_button(
+@allure.title("Org-positions: ручное создание заблокировано — есть 1C-only alert")
+def test_org_positions_has_1c_only_alert(
     client_admin_page: Page, settings: Settings
 ) -> None:
-    """Раньше создание было 1C-only с alert'ом. Теперь — ручная кнопка."""
     page = OrgPositionsPage(client_admin_page).goto(settings.client_url)
     expect(page.heading).to_be_visible(timeout=settings.nav_timeout)
-    expect(page.add_button).to_be_visible(timeout=settings.expect_timeout)
+    expect(page.alert_1c_only).to_be_visible(timeout=settings.expect_timeout)
 
 
 @pytest.mark.positive

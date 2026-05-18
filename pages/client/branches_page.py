@@ -10,16 +10,30 @@ class BranchesPage(BasePage):
     """Филиалы /branches — tree головного офиса."""
 
     URL_PATH = "/branches"
+    COLUMNS: tuple[str, ...] = ("Филиал", "Тип", "Отделы", "Пользователи", "Действия")
+    VIEW_TABS: tuple[str, ...] = ("Таблица", "Иерархия")
 
     def __init__(self, page: Page) -> None:
         super().__init__(page)
         self._heading: Locator = page.get_by_role(
             "heading", name=t("client.branches.title"), level=4
         )
-        # Кнопка "Добавить филиал" есть и в шапке и в last-listitem дерева → берём первую
+        self._subtitle: Locator = page.get_by_text(
+            t("client.branches.subtitle"), exact=True
+        )
         self._add_button: Locator = page.get_by_role(
             "button", name=t("client.branches.add_button")
-        ).first
+        )
+        self._search: Locator = page.get_by_placeholder(
+            t("client.branches.search_placeholder")
+        )
+        self._tab_table: Locator = page.get_by_role(
+            "tab", name=t("client.branches.tab_table"), exact=True
+        )
+        self._tab_hierarchy: Locator = page.get_by_role(
+            "tab", name=t("client.branches.tab_hierarchy"), exact=True
+        )
+        self._table: Locator = page.get_by_role("main").get_by_role("table")
 
     @property
     def heading(self) -> Locator:
@@ -28,6 +42,24 @@ class BranchesPage(BasePage):
     @property
     def add_button(self) -> Locator:
         return self._add_button
+
+    @property
+    def subtitle(self) -> Locator:
+        return self._subtitle
+
+    @property
+    def search_input(self) -> Locator:
+        return self._search
+
+    @property
+    def table(self) -> Locator:
+        return self._table
+
+    def view_tab(self, name: str) -> Locator:
+        return self.page.get_by_role("tab", name=name, exact=True)
+
+    def column_header(self, name: str) -> Locator:
+        return self._table.get_by_role("columnheader", name=name, exact=True)
 
     def click_add(self) -> Self:
         self._add_button.click()

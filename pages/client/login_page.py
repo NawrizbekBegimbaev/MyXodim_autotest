@@ -17,10 +17,22 @@ class ClientLoginPage(BasePage):
 
     def __init__(self, page: Page) -> None:
         super().__init__(page)
+        self._heading: Locator = page.get_by_role(
+            "heading", name=t("login.client.heading"), level=5
+        )
+        self._subtitle: Locator = page.get_by_text(t("login.client.subtitle"), exact=True)
         self._phone_input: Locator = page.get_by_role(
             "textbox", name=t("login.client.phone_label")
         )
         self._submit: Locator = page.get_by_role("button", name=t("login.client.send_otp"))
+
+    @property
+    def heading(self) -> Locator:
+        return self._heading
+
+    @property
+    def subtitle(self) -> Locator:
+        return self._subtitle
 
     @property
     def submit_button(self) -> Locator:

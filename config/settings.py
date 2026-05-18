@@ -9,16 +9,16 @@ class Settings(BaseSettings):
     client_url: str = Field(default="https://dev-hub-client.greatmall.uz")
     mock1c_url: str = Field(default="https://dev-mock-1c.greatmall.uz")
 
-    super_admin_phone: str = Field(default="+998900000000")
-    super_admin_password: str = Field(default="changeme")
+    super_admin_phone: str = Field(default="+998991234567")
+    super_admin_password: str = Field(default="")
 
     # Существующий тестовый сотрудник в Client UI на dev — для smoke логина.
     # В обычных тестах сотрудники создаются на лету (см. CLAUDE.md §5).
-    client_smoke_phone: str = Field(default="+998900000000")
+    client_smoke_phone: str = Field(default="+998905555518")
     # Тестовая орг для positive Client UI тестов (пока BUG-001 блокирует
     # создание новых компаний). Должна существовать на dev и client_smoke_phone
     # должен быть Администратором в ней.
-    client_smoke_org: str = Field(default="SecondQaTeam")
+    client_smoke_org: str = Field(default="[E2E recon] 8dgk1l")
 
     mock1c_username: str = Field(default="")
     mock1c_password: str = Field(default="")

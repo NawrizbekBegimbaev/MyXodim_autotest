@@ -11,30 +11,16 @@ from pages.base_page import BasePage
 class DocumentsPage(BasePage):
     URL_PATH = "/documents"
 
-    # Табы статуса (с 2026-05-03 — 8 штук, было 5).
-    # Соответствует BRD §3.4 + статусы 1С-выгрузки.
-    STATUS_TABS: tuple[str, ...] = (
-        "Все",
-        "Черновик",
-        "В работе",
-        "Завершён",
-        "Отменён",
-        "В архиве",
-        "Отправлен в 1С",
-        "Ошибка выгрузки",
-    )
-
-    # Колонки таблицы документов (с 2026-05-03 — 7 штук,
-    # добавили "Откуда" и "Куда").
     COLUMNS: tuple[str, ...] = (
-        "Номер",
         "Заголовок",
-        "Откуда",
-        "Куда",
-        "Автор",
-        "Дата",
         "Статус",
+        "Дата",
+        "Номер",
+        "Вид документа",
+        "Организация",
     )
+    VIEW_MODES: tuple[str, ...] = ("kanban view", "table view")
+    KANBAN_LANES: tuple[str, ...] = ("В ожидании", "В работе", "Завершён", "Отказан")
 
     def __init__(self, page: Page) -> None:
         super().__init__(page)
@@ -44,8 +30,19 @@ class DocumentsPage(BasePage):
         self._create_button: Locator = page.get_by_role(
             "button", name=t("client.documents.create_button")
         )
-        self._tablist: Locator = page.get_by_role("tablist").first
-        self._table: Locator = page.get_by_role("table").first
+        self._kanban_button: Locator = page.get_by_role(
+            "button", name=t("client.documents.view_kanban")
+        )
+        self._table_button: Locator = page.get_by_role(
+            "button", name=t("client.documents.view_table")
+        )
+        self._date_filter_button: Locator = page.get_by_role(
+            "button", name=t("client.documents.date_filter")
+        )
+        self._search: Locator = page.get_by_placeholder(
+            t("client.documents.search_placeholder")
+        )
+        self._table: Locator = page.get_by_role("main").get_by_role("table")
 
     @property
     def heading(self) -> Locator:
@@ -56,15 +53,35 @@ class DocumentsPage(BasePage):
         return self._create_button
 
     @property
-    def tablist(self) -> Locator:
-        return self._tablist
+    def kanban_button(self) -> Locator:
+        return self._kanban_button
+
+    @property
+    def table_button(self) -> Locator:
+        return self._table_button
+
+    @property
+    def date_filter_button(self) -> Locator:
+        return self._date_filter_button
+
+    @property
+    def search_input(self) -> Locator:
+        return self._search
 
     @property
     def table(self) -> Locator:
         return self._table
 
-    def tab(self, name: str) -> Locator:
-        return self._tablist.get_by_role("tab", name=name, exact=True)
+    def switch_to_kanban(self) -> Self:
+        self._kanban_button.click()
+        return self
+
+    def switch_to_table(self) -> Self:
+        self._table_button.click()
+        return self
+
+    def kanban_column(self, status: str) -> Locator:
+        return self.page.get_by_role("heading", name=status, level=6).locator("..")
 
     def column_header(self, name: str) -> Locator:
         return self._table.get_by_role("columnheader", name=name, exact=True)

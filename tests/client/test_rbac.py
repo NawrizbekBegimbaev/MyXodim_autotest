@@ -38,11 +38,11 @@ def test_admin_sees_all_menu_sections(
     client_admin_page: Page, settings: Settings
 ) -> None:
     page = client_admin_page
-    page.goto(f"{settings.client_url}/dashboard", wait_until="networkidle")
+    page.goto(f"{settings.client_url}/home", wait_until="networkidle")
 
     sidebar = ClientSidebar(page).expand_all()
 
-    for _group, label, _path in ADMIN_NAV:
+    for _section, _subgroup, label, _path in ADMIN_NAV:
         expect(sidebar.link(label).first).to_be_visible(
             timeout=settings.expect_timeout
         )
@@ -55,7 +55,7 @@ def test_admin_role_label_in_header(
     client_admin_page: Page, settings: Settings
 ) -> None:
     page = client_admin_page
-    page.goto(f"{settings.client_url}/dashboard", wait_until="networkidle")
+    page.goto(f"{settings.client_url}/home", wait_until="networkidle")
     expect(
         page.get_by_role("button").filter(has_text="Администратор").first
     ).to_be_visible(timeout=settings.expect_timeout)
@@ -95,7 +95,6 @@ def test_admin_can_access_integration(
         ("/branches", "Филиалы"),
         ("/departments", "Отделы"),
         ("/routes", "Шаблоны маршрутов"),
-        ("/categories", "Категории"),
         ("/organization", "Настройки организации"),
         ("/integration", "Интеграция"),
     ],
@@ -296,5 +295,5 @@ def test_finansist_sidebar_hides_admin_sections(
     # Группа "Оргструктура" вообще не должна быть видна не-admin'у
     expect(sidebar.group_button("Оргструктура")).to_have_count(0)
     # Точечно проверяем что отдельные admin-only ссылки отсутствуют
-    for hidden in ("Пользователи", "Должности", "Категории", "Филиалы", "Отделы"):
+    for hidden in ("Пользователи", "Должности", "Филиалы", "Отделы"):
         expect(sidebar.link(hidden)).to_have_count(0)

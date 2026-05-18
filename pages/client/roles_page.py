@@ -10,6 +10,13 @@ class RolesPage(BasePage):
     """Кастомные роли /roles."""
 
     URL_PATH = "/roles"
+    COLUMNS: tuple[str, ...] = ("Название роли", "Права доступа", "Действия")
+    PERM_GROUPS: tuple[str, ...] = (
+        t("client.roles.group_docflow"),
+        t("client.roles.group_hr"),
+        t("client.roles.group_finance"),
+        t("client.roles.group_settings"),
+    )
 
     def __init__(self, page: Page) -> None:
         super().__init__(page)
@@ -32,6 +39,9 @@ class RolesPage(BasePage):
     @property
     def table(self) -> Locator:
         return self._table
+
+    def column_header(self, name: str) -> Locator:
+        return self._table.get_by_role("columnheader", name=name, exact=True)
 
     def click_add(self) -> Self:
         self._add_button.click()

@@ -77,3 +77,13 @@ class DepartmentsPage(BasePage):
     def search(self, query: str) -> Self:
         self._search_input.fill(query)
         return self
+
+    def filter_by_branch(self, label: str) -> Self:
+        self._branch_filter.click()
+        self.page.get_by_role("option", name=label, exact=True).click()
+        return self
+
+    def filter_by_source(self, label: str) -> Self:
+        self._source_filter.click()
+        self.page.get_by_role("option", name=label, exact=True).click()
+        return self
