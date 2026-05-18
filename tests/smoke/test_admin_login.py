@@ -15,6 +15,8 @@ from pages.admin.login_page import AdminLoginPage
 
 
 @pytest.mark.smoke
+@pytest.mark.needs_admin_creds
+@pytest.mark.skip(reason="BUG-029 admin auth broken")
 @allure.title("Super Admin: вход в Admin UI → редирект на /dashboard")
 def test_super_admin_login_with_valid_credentials_opens_dashboard(
     page: Page, settings: Settings

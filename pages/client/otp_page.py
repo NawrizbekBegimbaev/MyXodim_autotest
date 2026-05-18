@@ -14,7 +14,9 @@ class OtpPage(BasePage):
         self._heading: Locator = page.get_by_role(
             "heading", name=t("otp.heading"), level=5
         )
-        self._code_input: Locator = page.get_by_label(t("otp.input_label"))
+        self._code_input: Locator = page.get_by_label(t("otp.input_label")).or_(
+            page.get_by_placeholder(t("otp.input_placeholder"))
+        ).first
         self._submit: Locator = page.get_by_role("button", name=t("otp.submit"))
 
     @property

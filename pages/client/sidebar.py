@@ -140,7 +140,7 @@ class ClientSidebar:
         return self._nav.locator(f'[role="button"][aria-label="{name}"]').first
 
     def subgroup_button(self, name: str) -> Locator:
-        return self._nav.locator(f'button[aria-label="{name}"]').first
+        return self._nav.get_by_role("button", name=name, exact=True).first
 
     def group_button(self, name: str) -> Locator:
         return self.subgroup_button(name)

@@ -2,8 +2,8 @@
 
 BRD §3.4: Client UI вход через телефон + OTP.
 После OTP две развилки:
-- ≥2 орг → /tenant-select (выбор организации)
-- одна орг → сразу /documents (или /dashboard)
+- ≥2 орг или 0 орг → /tenant-select
+- одна орг → сразу /home
 
 Тест проверяет успешный логин (либо tenant-select, либо landing-страница).
 """
@@ -33,13 +33,12 @@ def test_client_login_with_valid_otp_redirects_to_app(
     with allure.step("Вводим TEST_OTP"):
         OtpPage(page).enter_code(TEST_OTP).submit()
 
-    with allure.step("Редирект на /tenant-select (≥2 орг) или /documents (одна орг)"):
+    with allure.step("Редирект на /tenant-select или /home"):
         # URL не /login — успешный логин
         expect(page).not_to_have_url(
             re.compile(r"/login"), timeout=settings.nav_timeout
         )
-        # И один из двух валидных landing'ов
         expect(page).to_have_url(
-            re.compile(r"/(tenant-select|documents|dashboard)"),
+            re.compile(r"/(tenant-select|home)"),
             timeout=settings.nav_timeout,
         )
