@@ -21,3 +21,6 @@ recon/*
 recon/baseline/*.yml.new
 
 tests/visual/artifacts/
+
+# Локальные Claude Code harness-настройки (persona/settings), не для репо
+.claude/

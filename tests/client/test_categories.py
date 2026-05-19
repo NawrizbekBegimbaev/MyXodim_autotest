@@ -12,6 +12,10 @@ from config.settings import Settings
 from data.constants import E2E_PREFIX
 from pages.client.categories_page import CategoriesPage, CategoryCreateDialog
 
+pytestmark = pytest.mark.skip(
+    reason="BUG-010: раздел /categories удалён из продукта и теперь отдаёт /forbidden"
+)
+
 
 def _open(page: Page, settings: Settings) -> CategoriesPage:
     cats = CategoriesPage(page).goto(settings.client_url)

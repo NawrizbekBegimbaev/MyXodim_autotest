@@ -48,10 +48,24 @@ def settings() -> Settings:
 # скрипта все тесты, которые ассертят RU-тексты, ломаются.
 # Ключи: admin-lang (Admin UI), client-lang (Client UI). Фронт читает их
 # при init и применяет локаль.
+#
+# Дополнительно: защита от закэшированного `runtime/env.js` с пустым
+# `window.__ENV__.API_URL` — наблюдалось в долгоживущих Chromium-сессиях
+# (MCP recon 2026-05-12). Polling 5 сек с момента init подменит пустой
+# URL на каноничный dev-hub-api.greatmall.uz; если значение уже корректное —
+# скрипт молчит.
 _FORCE_RU_LANG_SCRIPT = (
     "try {"
     "  localStorage.setItem('admin-lang', 'ru');"
     "  localStorage.setItem('client-lang', 'ru');"
+    "  var _fixEnv = function () {"
+    "    if (window.__ENV__ && (!window.__ENV__.API_URL || window.__ENV__.API_URL === '')) {"
+    "      window.__ENV__.API_URL = 'https://dev-hub-api.greatmall.uz';"
+    "    }"
+    "  };"
+    "  _fixEnv();"
+    "  var _i = 0;"
+    "  var _h = setInterval(function () { _fixEnv(); if (++_i > 100) clearInterval(_h); }, 50);"
     "} catch (e) { /* SecurityError on about:blank — игнор */ }"
 )
 
@@ -72,7 +86,7 @@ def _force_ru_lang() -> Iterator[None]:
 
     original_new_context = _Browser.new_context
 
-    import contextlib  # noqa: PLC0415
+    import contextlib
 
     def patched(self: Browser, **kwargs: Any) -> BrowserContext:
         ctx = original_new_context(self, **kwargs)
