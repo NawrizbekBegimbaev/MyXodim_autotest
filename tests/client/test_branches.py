@@ -24,7 +24,10 @@ def _fresh_title(prefix: str = "Br") -> str:
 
 
 # Все тесты в файле мутируют состояние через UI (CRUD-формы).
-pytestmark = pytest.mark.creates_data
+pytestmark = [
+    pytest.mark.creates_data,
+    pytest.mark.skip(reason="Branch CRUD mutates recon tenant; keep out of Step 3 read-only positive run"),
+]
 
 
 @pytest.mark.positive

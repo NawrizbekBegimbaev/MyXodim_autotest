@@ -134,7 +134,7 @@ class OrgPositionsPage(BasePage):
         "Отдел",
         "Должность",
         "Сотрудники",
-        "Источник",
+        "При вакантности",
         "Действия",
     )
 
@@ -148,6 +148,7 @@ class OrgPositionsPage(BasePage):
         self._alert_1c_only: Locator = page.get_by_text(
             t("client.org_positions.alert_1c_only"), exact=True
         )
+        self._add_button: Locator = page.get_by_role("button", name="+ Добавить позицию")
         self._search_input: Locator = page.get_by_role(
             "textbox", name="Поиск по названию…"
         )
@@ -161,6 +162,10 @@ class OrgPositionsPage(BasePage):
     @property
     def alert_1c_only(self) -> Locator:
         return self._alert_1c_only
+
+    @property
+    def add_button(self) -> Locator:
+        return self._add_button
 
     @property
     def search_input(self) -> Locator:

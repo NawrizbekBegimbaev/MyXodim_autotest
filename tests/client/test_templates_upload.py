@@ -32,7 +32,11 @@ def _fresh_title() -> str:
 
 
 # Все тесты в файле мутируют состояние через UI (CRUD-формы).
-pytestmark = pytest.mark.creates_data
+pytestmark = [
+    pytest.mark.creates_data,
+    pytest.mark.needs_backend,
+    pytest.mark.skip(reason="Template upload flow blocked until create modal is available in recon tenant"),
+]
 
 
 @pytest.mark.positive

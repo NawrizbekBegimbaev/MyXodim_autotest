@@ -34,7 +34,10 @@ def _expect_dialog_stays(dialog: MemberCreateDialog, settings: Settings) -> None
 
 
 # Все тесты в файле мутируют состояние через UI (CRUD-формы).
-pytestmark = pytest.mark.creates_data
+pytestmark = [
+    pytest.mark.creates_data,
+    pytest.mark.skip(reason="Member create negative tests mutate recon tenant; deferred until dedicated data setup"),
+]
 
 
 @pytest.mark.negative

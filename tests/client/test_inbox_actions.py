@@ -1,4 +1,4 @@
-"""Inbox actions — empty state + tabs (полный flow approve/reject требует
+"""Inbox actions — empty state + filters (полный flow approve/reject требует
 существующего документа в очереди и покрывается главным E2E)."""
 
 from __future__ import annotations
@@ -29,24 +29,15 @@ def test_inbox_search_no_match_does_not_crash(
 
 
 @pytest.mark.positive
-@pytest.mark.parametrize(
-    "tab",
-    [
-        pytest.param("Все", id="all"),
-        pytest.param("Черновик", id="draft"),
-        pytest.param("В работе", id="in-progress"),
-        pytest.param("Завершён", id="completed"),
-        pytest.param("Отменён", id="cancelled"),
-        pytest.param("Отправлен в 1С", id="sent-to-1c"),
-    ],
-)
-@allure.title("Inbox: переключение таба '{tab}' не ломает страницу")
-def test_inbox_tab_switch_does_not_crash(
-    client_admin_page: Page, settings: Settings, tab: str
+@allure.title("Inbox: toolbar and columns are visible")
+def test_inbox_toolbar_and_columns_visible(
+    client_admin_page: Page, settings: Settings
 ) -> None:
     inbox = _open_inbox(client_admin_page, settings)
-    inbox.status_tab(tab).click()
-    expect(inbox.heading).to_be_visible()
+    expect(inbox.history_button).to_be_visible(timeout=settings.expect_timeout)
+    expect(inbox.refresh_button).to_be_visible()
+    for column in InboxPage.COLUMNS:
+        expect(inbox.column_header(column)).to_be_visible()
 
 
 @pytest.mark.positive

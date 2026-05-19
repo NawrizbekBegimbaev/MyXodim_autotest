@@ -30,7 +30,11 @@ def _fresh_name() -> str:
 
 
 # Все тесты в файле мутируют состояние через UI (CRUD-формы).
-pytestmark = pytest.mark.creates_data
+pytestmark = [
+    pytest.mark.creates_data,
+    pytest.mark.needs_invitees,
+    pytest.mark.skip(reason="Route CRUD requires workflow targets/invitees; deferred to Step 4"),
+]
 
 
 @pytest.mark.positive

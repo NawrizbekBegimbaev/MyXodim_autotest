@@ -19,7 +19,10 @@ def _open_roles(page: Page, settings: Settings) -> RolesPage:
 
 
 # Все тесты в файле мутируют состояние через UI (CRUD-формы).
-pytestmark = pytest.mark.creates_data
+pytestmark = [
+    pytest.mark.creates_data,
+    pytest.mark.skip(reason="Role edit mutates shared role state; deferred until dedicated data setup"),
+]
 
 
 @pytest.mark.positive

@@ -21,6 +21,11 @@ from data.constants import E2E_PREFIX
 from pages.client.member_create_dialog import MemberCreateDialog
 from pages.client.members_page import MembersPage
 
+pytestmark = [
+    pytest.mark.creates_data,
+    pytest.mark.skip(reason="Member create mutates recon tenant; deferred until dedicated data setup"),
+]
+
 
 @pytest.mark.positive
 @allure.title("UC-3.6: создание сотрудника с валидными данными → появляется в списке")

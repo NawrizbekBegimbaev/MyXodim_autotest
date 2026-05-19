@@ -31,6 +31,8 @@ def test_documents_list_has_create_button(
 
 
 @pytest.mark.positive
+@pytest.mark.needs_backend
+@pytest.mark.skip(reason="Document create wizard blocked in recon tenant until template/route fixture is available")
 @allure.title("Documents: 'Создать документ' открывает /documents/create wizard")
 def test_documents_create_button_opens_wizard(
     client_admin_page: Page, settings: Settings
@@ -45,6 +47,8 @@ def test_documents_create_button_opens_wizard(
 
 
 @pytest.mark.positive
+@pytest.mark.needs_backend
+@pytest.mark.skip(reason="Document create wizard blocked in recon tenant until template/route fixture is available")
 @allure.title("Documents wizard: переключатель 'По шаблону' / 'Свободный' кликабелен")
 def test_documents_wizard_template_freeform_toggle(
     client_admin_page: Page, settings: Settings
@@ -62,6 +66,8 @@ def test_documents_wizard_template_freeform_toggle(
 
 
 @pytest.mark.positive
+@pytest.mark.needs_backend
+@pytest.mark.skip(reason="Document create wizard blocked in recon tenant until template/route fixture is available")
 @allure.title("Documents wizard: 'Назад' возвращает на /documents")
 def test_documents_wizard_back_returns_to_list(
     client_admin_page: Page, settings: Settings

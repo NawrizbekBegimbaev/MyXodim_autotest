@@ -17,6 +17,11 @@ from pages.client.position_dialogs import (
 )
 from pages.client.positions_page import PositionsPage
 
+pytestmark = [
+    pytest.mark.creates_data,
+    pytest.mark.skip(reason="Position CRUD mutates recon tenant; deferred until dedicated data setup"),
+]
+
 
 def _open_positions(page: Page, settings: Settings) -> PositionsPage:
     pos = PositionsPage(page).goto(settings.client_url)

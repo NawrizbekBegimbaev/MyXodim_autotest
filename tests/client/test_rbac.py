@@ -151,14 +151,14 @@ def fresh_browser_page(browser: Browser) -> Iterator[Page]:
 
 def _login_as_employee(page: Page, phone: str, settings: Settings) -> None:
     """Логин в Client UI как новый сотрудник.
-    После OTP может быть /tenant-select (≥2 орг) или сразу /dashboard (одна орг).
+    После OTP может быть /tenant-select (≥2 орг) или сразу /home (одна орг).
     """
     ClientLoginPage(page).goto(settings.client_url).enter_phone(phone).submit()
     OtpPage(page).enter_code(TEST_OTP).submit()
     page.wait_for_load_state("networkidle", timeout=settings.nav_timeout)
     if "tenant-select" in page.url:
         SelectOrganizationPage(page).select(settings.client_smoke_org)
-    page.wait_for_url("**/dashboard", timeout=settings.nav_timeout)
+    page.wait_for_url("**/home", timeout=settings.nav_timeout)
 
 
 @pytest.mark.creates_data
@@ -209,6 +209,8 @@ def test_employee_header_shows_employee_role(
 @pytest.mark.creates_data
 @pytest.mark.rbac
 @pytest.mark.negative
+@pytest.mark.needs_invitees
+@pytest.mark.skip(reason="Step 4 is waiting for manually provisioned invitees/custom roles")
 @pytest.mark.xfail(
     reason="BUG-011: прямой URL обходит RBAC, /integration открыт любой роли. "
     "Critical security — ключ 1С виден. Фикс на frontend route-guard + backend.",
@@ -246,6 +248,8 @@ def test_finansist_cannot_access_integration_directly(
 @pytest.mark.creates_data
 @pytest.mark.rbac
 @pytest.mark.negative
+@pytest.mark.needs_invitees
+@pytest.mark.skip(reason="Step 4 is waiting for manually provisioned invitees/custom roles")
 @pytest.mark.xfail(
     reason="BUG-011: /roles открыт по прямой ссылке для не-admin ролей",
     strict=False,
@@ -276,6 +280,8 @@ def test_finansist_cannot_access_roles_directly(
 @pytest.mark.creates_data
 @pytest.mark.rbac
 @pytest.mark.positive
+@pytest.mark.needs_invitees
+@pytest.mark.skip(reason="Step 4 is waiting for manually provisioned invitees/custom roles")
 @allure.title("RBAC FINANSIST: sidebar скрывает админ-разделы (UI-уровень корректно)")
 def test_finansist_sidebar_hides_admin_sections(
     client_admin_page: Page,

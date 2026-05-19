@@ -24,7 +24,11 @@ def _fresh_title() -> str:
 
 
 # Все тесты в файле мутируют состояние через UI (CRUD-формы).
-pytestmark = pytest.mark.creates_data
+pytestmark = [
+    pytest.mark.creates_data,
+    pytest.mark.needs_backend,
+    pytest.mark.skip(reason="Template CRUD modal is not available in recon tenant UI"),
+]
 
 
 @pytest.mark.positive

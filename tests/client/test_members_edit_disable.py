@@ -13,6 +13,11 @@ from pages.client.member_create_dialog import MemberCreateDialog
 from pages.client.member_edit_dialog import MemberEditDialog
 from pages.client.members_page import MembersPage
 
+pytestmark = [
+    pytest.mark.creates_data,
+    pytest.mark.skip(reason="Member edit/disable mutates recon tenant; deferred until dedicated data setup"),
+]
+
 
 def _create_member_via_ui(
     client_admin_page: Page, settings: Settings, phone: str, last_name: str

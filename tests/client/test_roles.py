@@ -24,7 +24,10 @@ def _fresh_title() -> str:
 
 
 # Все тесты в файле мутируют состояние через UI (CRUD-формы).
-pytestmark = pytest.mark.creates_data
+pytestmark = [
+    pytest.mark.creates_data,
+    pytest.mark.skip(reason="Role CRUD mutates recon tenant; deferred until dedicated data setup"),
+]
 
 
 @pytest.mark.positive

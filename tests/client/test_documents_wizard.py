@@ -28,7 +28,11 @@ def _open_wizard(page: Page, settings: Settings) -> DocumentCreateWizardPage:
 
 
 # Все тесты в файле мутируют состояние через UI (CRUD-формы).
-pytestmark = pytest.mark.creates_data
+pytestmark = [
+    pytest.mark.creates_data,
+    pytest.mark.needs_backend,
+    pytest.mark.skip(reason="Document wizard needs template/route fixtures in recon tenant"),
+]
 
 
 @pytest.mark.positive

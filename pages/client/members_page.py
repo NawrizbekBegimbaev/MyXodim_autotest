@@ -1,3 +1,4 @@
+import re
 from typing import Self
 
 from playwright.sync_api import Locator, Page
@@ -46,8 +47,9 @@ class MembersPage(BasePage):
         return self
 
     def row_by_phone(self, phone: str) -> Locator:
-        # Каждая строка содержит cell с телефоном; ищем row у которой видно phone
-        return self._table.get_by_role("row").filter(has_text=phone)
+        digits = re.sub(r"\D", "", phone).removeprefix("998")
+        pattern = r"\D*".join(re.escape(ch) for ch in digits)
+        return self._table.get_by_role("row").filter(has_text=re.compile(pattern))
 
     def click_edit_for_phone(self, phone: str) -> Self:
         """В строке с указанным телефоном кликаем кнопку 'Редактировать'."""
