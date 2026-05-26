@@ -1,0 +1,2575 @@
+================================================================================
+BusinessHub — Bug Report
+================================================================================
+
+Дата обнаружения:   2026-04-28
+Окружение:          dev
+                    Admin UI:  https://dev-hub-admin.greatmall.uz
+                    Client UI: https://dev-hub-client.greatmall.uz
+                    API:       https://dev-hub-api.greatmall.uz
+Браузер:            Chromium 1208 (Playwright bundled), viewport 1440x900
+Локаль:             ru-RU
+Аккаунт:            Super Admin (+998991234567), Client Admin (+998913030519)
+Обнаружено:         Автоматизированный recon при подготовке E2E-тестов
+                    (Playwright, перехват network)
+Артефакты:          recon/* в репозитории E2E-тестов
+
+
+================================================================================
+BUG-001: Фронт молча игнорирует ВСЕ 4xx-ответы от бэка при создании компании
+         (нет error toast, нет inline-ошибки)
+================================================================================
+
+Severity:           Major
+Priority:           P1
+Компонент:          Frontend (страница /tenants/new, обработка POST-ответа)
+
+[STILL BROKEN 2026-05-19 verified via MCP] Класс silent-failure
+подтверждён в Client UI /members → Add Employee: backend вернул 400
+CONSTRAINT_VIOLATION с violations[{"propertyPath":"roleId","detail":"не
+должно быть null"}], frontend silent — dialog не закрылся, ни toast, ни
+inline-error, ни aria-invalid. То же поведение что Admin UI Tenant Create
+изначально.
+
+Описание:
+    При создании компании на любой 4xx-ответ бэка фронт НЕ показывает
+    пользователю никакого сообщения:
+        - нет toast в Notifications-region
+        - нет inline-ошибки рядом с полем
+        - форма остаётся открытой с введёнными данными
+
+    Пользователь видит что "Создать" не сработала, но не понимает
+    причину.
+
+Затронутые сценарии (подтверждены recon'ом 2026-04-28):
+    409 INN_EXISTS         — дубль ИНН
+    409 SLUG_EXISTS        — дубль slug
+    409 PHONE_ADMIN_EXISTS — дубль телефона администратора
+    409 PINFL_EXISTS       — дубль ПИНФЛ
+    400 constraint-violations — невалидный формат (например буквы в ИНН)
+
+    Все эти ответы содержат человекочитаемое поле "detail" и "title" —
+    но фронт его не рендерит.
+
+Шаги воспроизведения (пример для дубль-ИНН):
+    1. Создать компанию A с известным ИНН (валидно).
+    2. Открыть /tenants/new и попытаться создать B с тем же ИНН.
+    3. Нажать "Создать".
+
+Ожидаемый результат:
+    Toast/inline с текстом из ответа:
+        "Организация с этим ИНН уже зарегистрирована" (для 409 INN_EXISTS)
+        "Такой slug уже существует" (для 409 SLUG_EXISTS)
+        "Этот телефон используется другим администратором" (для 409 PHONE_ADMIN_EXISTS)
+        "Указанный ПИНФЛ уже зарегистрирован" (для 409 PINFL_EXISTS)
+
+Фактический результат:
+    region "Notifications alt+T" пуст; форма открыта; пользователь
+    в недоумении.
+
+Тело ответа от бэка содержит всё нужное:
+    {
+      "detail":"Организация с этим ИНН уже зарегистрирована",
+      "title":"ИНН уже существует",
+      "code":"INN_EXISTS",
+      "status":409,
+      ...
+    }
+
+Доказательство:
+    - recon/neg_01_dup_inn.yaml      — пустая Notifications при 409 INN
+    - recon/neg_02_dup_slug.yaml     — пустая при 409 SLUG
+    - recon/neg_03_dup_phone.yaml    — пустая при 409 PHONE_ADMIN
+    - recon/neg_05_inn_letters.yaml  — пустая при 400 constraint-violations
+    - recon/neg_api.txt              — все 4xx ответы
+
+Рекомендация:
+    Привести обработку ошибок к единой стратегии:
+        - на любой 4xx/5xx читать поле detail из ответа (RFC 7807 problem+json)
+        - показывать toast "<title>: <detail>"
+        - для constraint-violations (BUG-002) дополнительно парсить
+          violations[] и подсвечивать конкретные поля формы
+        - оставлять форму открытой с введёнными данными
+
+
+
+
+================================================================================
+BUG-002: RBAC обходится прямым URL — non-admin роли получают доступ к
+         /integration (ключ 1С), /members, /roles, /organization и др.
+================================================================================
+
+Severity:           Critical (security — leak ключа интеграции 1С)
+Priority:           P0
+Компонент:          Frontend Client UI (route guards) + Backend API
+                    (отсутствие проверки прав на эндпоинтах)
+
+[PARTIAL FIXED 2026-05-19 verified via MCP, login as EMPLOYEE
++998906145041 tenant [E2E recon] 8dgk1l]
+Frontend route-guard добавлен на ВСЕ ключевые admin-URL: /integration,
+/roles, /members, /organization, /positions, /departments, /org-positions,
+/categories, /persons, /templates, /routes — все редиректят Employee'а
+на /forbidden?from=<path>. Исключение: /branches всё ещё рендерится
+("Не удалось загрузить филиалы") — единственная дыра в route-map (то же
+что NEW FINDING 2026-05-07 в BUG-009). 1C-ключ leak закрыт: UI redirect
+работает, /api/v1/integration/1c/key → 401, /api/v1/integration/1c → 500
+(не data leak, internal crash).
+Backend RBAC HOLE остаётся: GET /api/v1/users/members → 200 (Employee
+видит phones/roles/names всех 19 членов), GET /api/v1/users/roles → 200
+(Employee видит permission matrix всех ролей включая ADMINISTRATOR).
+Эти 2 endpoint'а должны быть admin-only.
+
+Описание:
+    Sidebar (меню) Client UI корректно скрывает админ-только разделы
+    для не-Administrator ролей. Например, под кастомной ролью FINANSIST
+    в меню видны только: «Требуют подписи», «Мои документы»,
+    «Мои заявки», «Шаблоны», «Маршруты».
+
+    Однако при ПРЯМОМ переходе по URL пользователь без прав попадает
+    на любую административную страницу с полным её содержимым:
+
+        /members      — список Пользователей орг
+        /roles        — Роли и права
+        /positions    — Должности
+        /categories   — Категории
+        /routes       — Шаблоны маршрутов
+        /organization — Настройки организации
+        /integration  — Интеграция с 1С + КЛЮЧ ИНТЕГРАЦИИ ВИДЕН  ⚠️
+
+    Заблокирован прямым URL только /branches (h4 не рендерится).
+
+    КРИТИЧНО: /integration содержит ключ `bh_live_<32 hex>` который
+    позволяет push'ить данные сотрудников/должностей/документов в
+    компанию через Mock 1C API. Любой залогиненный юзер компании,
+    независимо от роли, может этот ключ скопировать.
+
+Предусловия:
+    - Орг с кастомной не-admin ролью (например QaTeam, роль FINANSIST)
+    - Сотрудник этой орг с не-admin ролью
+
+Шаги воспроизведения:
+    1. Логин Администратором, /members → создать сотрудника с ролью
+       FINANSIST (или любая не-Administrator кастомная роль).
+    2. Logout, залогиниться созданным сотрудником.
+    3. Sidebar — админ-разделов нет (RBAC на меню работает).
+    4. В адресной строке ввести напрямую:
+           https://dev-hub-client.greatmall.uz/integration
+    5. Страница загружается, виден ключ интеграции с 1С.
+    6. Аналогично открываются /members /roles /organization etc.
+
+Ожидаемый результат:
+    Прямой переход на админ-only URL под не-Administrator юзером:
+    - либо редирект на /dashboard (или 404)
+    - либо страница 403 «Доступ запрещён»
+    - бэк должен возвращать 403 на API-эндпоинтах раздела
+
+Фактический результат:
+    Страница рендерится полностью с данными. Ключ интеграции 1С
+    открыт всем юзерам организации.
+
+Доказательство:
+    - scripts/recon_rbac_finansist.py — повторяемый скрипт
+    - recon/finrole_04_dashboard_as_finansist.yaml
+    - tests/client/test_rbac.py::test_finansist_cannot_access_integration
+      (xfail — будет проходить после фикса)
+
+Рекомендация:
+    1. Frontend: route guard на каждой админ-странице — проверять
+       permission текущего юзера, при отсутствии — redirect /dashboard
+       или 403-page.
+    2. Backend: ВСЕ админ-эндпоинты должны проверять права на сервере.
+       Только защита на фронте недостаточна — POST/GET напрямую через
+       devtools обойдут любой UI guard.
+    3. Спец-кейс /integration: ключ интеграции должен быть доступен
+       только Администратору орг. Замаскировать частично (••••••••<last4>)
+       пока юзер явно не нажмёт "Показать", аудит лога просмотров.
+    4. Аудит существующих юзеров: проверить логи — кто из не-admin
+       юзеров обращался к /api/v1/integrations/* за последние месяцы.
+
+
+
+================================================================================
+BUG-003: Ошибка при отправке сотрудников из Mock 1C → Client UI
+================================================================================
+
+Severity:           Major (1C integration broken)
+Priority:           P1
+Компонент:          Backend API (integration/1c/employees) + Mock 1C
+Найдено:            2026-05-04 ручное QA
+
+[STILL BROKEN 2026-05-19 verified via MCP, Mock 1C key
+bh_live_9479ba5d751e4c8ab3d3d80c7e015b23 (recon tenant)]
+Mock 1C → /employees: подключился ключом recon-тенанта, "Отправить все"
+на 6 employees (E01..E06: Иванова/Петрова/Сергеев/Ахмедов/Смирнова/
+Сидоров) → UI каждой строки сменился на "Отправлено", BUT в BusinessHub
+/members ни один из них НЕ появился (всё ещё 19 членов из E2E прогонов,
+никаких Иванова/Петрова/Сергеев). Класс silent-UI-lie сохранён + сам
+1C→BH push сломан. Direct probe POST /api/v1/integration/1c/employees
+с array-wrapper {employees:[...]} → 400 deserialization error
+("from Object value, expected ArrayList"), значит endpoint требует
+голый array, но это уже backend-API-contract issue.
+
+Описание:
+    При нажатии "Отправить все" на странице Сотрудники в Mock 1C UI
+    операция падает с ошибкой. Сотрудники не появляются в Client UI
+    /members. Аналог BUG-012 (job-titles batch FIXED) но для другого
+    endpoint'а — employees batch.
+
+Ожидаемый результат:
+    Сотрудники, отправленные через Mock 1C, появляются в Client UI
+    /members со статусом из 1С.
+
+Фактический результат:
+    Ошибка при отправке. Сотрудники не появляются.
+
+Повторная проверка (2026-05-06):
+    NOT FIXED. Старый endpoint `/api/v1/integration/1c/users/batch`
+    больше не вызывается; Mock 1C отправляет сотрудников на
+    `POST /api/v1/integration/1c/employees`.
+
+    Без предварительной отправки должностей backend возвращает 207 с
+    `JOB_TITLE_NOT_FOUND` по каждому сотруднику. После предварительной
+    успешной отправки должностей (`/job-titles` → 200, created=1)
+    сотрудники всё равно не создаются: `/employees` возвращает 207 с
+    `PERSON_NOT_FOUND` и message `sync /persons before /employees`.
+    В Client UI `/members` отправленные сотрудники не появляются.
+
+    Дополнительно: Mock 1C UI при этих 207 responses показывает строкам
+    статус "Отправлено", хотя backend вернул failed=1.
+
+Рекомендация:
+    Проверить backend endpoint POST /api/v1/integration/1c/users/batch
+    (фактический endpoint — НЕ /employees/batch как было в начальном
+    отчёте). Логи бэка на 5xx. Скорее всего null pointer / FK
+    constraint при batch insert.
+
+    Также: добавить в нашем strict-console guard ловлю этого endpoint'а
+    после разморозки CRUD-тестов.
+
+Подтверждено через MCP (2026-05-04, Mock 1C → TeamQa):
+    Шаги:
+      1. Открыл https://dev-mock-1c.greatmall.uz/.
+      2. Вставил ключ TeamQa
+         (bh_live_86bc3bdcddc44a63816b2080870acddf).
+      3. Click "Сохранить" → status "Подключено".
+      4. Tab "Сотрудники" — видны 6 предзагруженных employees
+         (emp-001 .. emp-006, Azimov/Karimova/Rakhimov/Toshmatov/
+          Yusupova/Nazarov с jt-001..jt-005).
+      5. Click "Отправить все".
+      6. Через ~12 секунд: все 6 строк status='Ошибка'.
+
+    Console errors:
+      6× POST /api/v1/integration/1c/users/batch → 500
+      (одна заявка на каждого employee = serialized calls,
+       не batch как имя предполагает).
+
+    Status colored как "Ошибка" в каждой строке employee.
+
+    Detail:
+      - Endpoint имя `/users/batch` но behaves как N×1 (single insert
+        per employee, не атомарно). Это inconsistent с naming —
+        надо либо переделать в truly batch, либо переименовать.
+      - 500 ошибка означает unhandled exception — не валидационный
+        4xx. Backend вылетает на каждом payload.
+
+    Влияние на тесты:
+      - E2E главный сценарий (test_admin_to_client_full_flow.py)
+        в шагах 7-8 использует именно этот flow (Mock 1C создаёт
+        сотрудника → push → видно в Client UI). Сейчас BLOCKED.
+      - E2E flow без EIMZO (alternative version, p.16) тоже blocked.
+      - Cross-app integration testing полностью не работает до фикса.
+
+    Связанные bugs:
+      - BUG-012 (job-titles batch FIXED) — был аналогичный 500.
+        Похоже что для users/batch похожий fix не применили.
+      - BUG-019 (pre-populated positions) — может быть связана:
+        возможно backend seed создаёт fake jt-001..jt-005 при
+        tenant creation, и users/batch падает на FK constraint
+        потому что должности с jt-001..jt-005 не реально существуют.
+
+
+
+
+================================================================================
+BUG-004: Директор может редактировать "Штатные позиции" — то же что BUG-021
+================================================================================
+
+Severity:           Major (permission matrix violation)
+Priority:           P1
+Компонент:          Frontend (/org-positions UI guard)
+Найдено:            2026-05-04 ручное QA
+
+[BLOCKED 2026-05-19] На recon-тенанте [E2E recon] 8dgk1l нет ни одного
+активного Director-юзера (только 4 EMPLOYEE и 1 ADMINISTRATOR). Recreate
+DIRECTOR user через UI не позволяется в рамках этой задачи (creates_data).
+Cross-check: route-guard на /org-positions работает для EMPLOYEE
+(redirect /forbidden). Под Director возможно поведение будет таким же —
+требуется отдельная задача с созданием director-user и repro.
+
+Описание:
+    Аналогично BUG-021: под Director'ом доступно редактирование штатных
+    позиций. По BRD §2.3 — read-only.
+
+Подтверждено через MCP (2026-05-04, login as Director Nukus):
+    /org-positions → "+ Добавить позицию" button visible. По BRD
+    Штатные позиции должны создаваться ТОЛЬКО через Mock 1C push
+    или Admin вручную, НЕ Director.
+
+    Дополнительно подтверждено: /departments → "Добавить отдел"
+    button также видна Director'у (новое наблюдение, расширяет scope).
+
+Рекомендация:
+    Single fix: при отрисовке кнопок Edit/Delete проверять permission
+    `org_positions.edit` / `.delete` для текущего юзера. Та же проверка
+    нужна для /positions, /branches, /departments, /categories,
+    /templates, /routes — везде где есть row-actions.
+
+
+
+
+================================================================================
+BUG-005: Директор видит раздел "Филиалы" в sidebar — должен быть скрыт
+================================================================================
+
+Severity:           Critical (permission/menu leak)
+Priority:           P0
+Компонент:          Frontend Client UI (sidebar group "Оргструктура")
+Найдено:            2026-05-04 ручное QA
+
+[BLOCKED 2026-05-19] Нет активного Director-юзера на dev. Cross-check:
+для EMPLOYEE sidebar НЕ содержит /branches как пункт (sidebar filter
+работает на уровне роли), но прямой переход /branches всё ещё рендерит
+страницу с alert "Не удалось загрузить филиалы" (route-guard дыра, см.
+BUG-009 NEW FINDING). Под Director скорее всего тот же класс дыр —
+нужна отдельная задача с director-user.
+
+Описание:
+    В sidebar под Director'ом группа "Оргструктура" показывает пункт
+    "Филиалы". По BRD §3.5 Director не имеет доступа к управлению
+    org-структурой.
+
+Связь с BUG-011:
+    Если пункт скрыли в menu но прямой URL /branches остался открытым —
+    это та же проблема что BUG-011 (RBAC bypass). Проверить что фронт
+    делает route-guard, а не только menu-фильтр.
+
+Ожидаемый результат:
+    "Филиалы" не видны в menu Director'а. Прямой URL /branches под
+    Director'ом → 403/redirect.
+
+Фактический результат:
+    Видны в menu.
+
+Подтверждено через MCP (2026-05-04, login as Director Nukus):
+    Sidebar Director'а в группе "Оргструктура" содержит:
+    Пользователи (/members), Филиалы (/branches), Отделы (/departments),
+    Должности (/positions), Штатные позиции (/org-positions) — идентично
+    Администратору.
+
+    Прямая навигация на /branches:
+      - HTTP 200, page LOADS (no 403/redirect)
+      - data fetch fails: "Не удалось загрузить филиалы"
+      - 4 console errors (likely 401/403 from API)
+    → BACKEND правильно блокирует API, FRONTEND ошибочно показывает
+    sidebar пункт + позволяет навигировать на /branches.
+
+
+
+
+================================================================================
+BUG-006: Директор видит "Системные роли", "Интеграция", ключ интеграции 1С
+         в Settings — должны быть скрыты + не должны быть доступны
+================================================================================
+
+Severity:           Critical (1С ключ leak — security)
+Priority:           P0
+Компонент:          Frontend (sidebar Settings group + URL guards) +
+                    Backend (permission на эндпоинте integration)
+Найдено:            2026-05-04 ручное QA
+
+[BLOCKED 2026-05-19] Нет активного Director-юзера на dev. Cross-check
+для EMPLOYEE: /integration → /forbidden redirect, /roles → /forbidden,
+backend /api/v1/integration/1c/key → 401. Этот класс багов скорее всего
+FIXED on frontend (same route-guard работает для всех ниже-Admin ролей)
+— но без Director-user'а не подтверждено напрямую.
+
+Описание:
+    Под Director'ом в Settings видны:
+      - Системные роли (/roles)
+      - Интеграция (/integration) с ключом bh_live_<32hex>
+      - Возможно /organization тоже частично доступен
+
+    По BRD §3.5 Director — не имеет доступа к Settings (это Admin-only).
+    Особо критично: ключ интеграции 1С позволяет push'ить данные
+    компании через Mock 1C API. Утечка ключа = compromise всей
+    1C-интеграции компании.
+
+Связь с BUG-011:
+    Это ровно тот класс багов. BUG-011 уже описывает прямой URL.
+    BUG-024 = тот же класс но в menu. Скорее всего обе уязвимости
+    исходят из того что фронт-route-guard и backend-permission не
+    реализованы.
+
+Ожидаемый результат:
+    Director'у: Settings отсутствуют в menu, прямой URL → 403.
+    Backend на /api/v1/integrations/* должен возвращать 403 для
+    Director-роли.
+
+Подтверждено через MCP (2026-05-04, login as Director Nukus):
+    Sidebar группа "Настройки" содержит:
+      - Организация (/organization) — read-only data view (no edit
+        controls), но включает Tenant ID UUID — internal identifier
+      - Системные роли (/roles) — TABLE с 5 ролями (Сотрудник, Менеджер,
+        Директор, Администратор, и custom E2EROLEWKJITR), каждая
+        с кнопкой "Редактировать" (aria-label) → Director может
+        редактировать permission matrix всех ролей включая Администратор
+      - Интеграция (/integration) → клик "Настроить" на 1C-карточке
+        открывает modal "Ключ интеграции" с buttons:
+          - aria="Показать" (eye icon) — раскрывает masked ключ
+          - aria="Скопировать" — copy в clipboard
+        Modal text: "Введите этот ключ в 1С для авторизации запросов
+        в BusinessHub" → подтверждает что это active integration key.
+
+    Это даёт Director'у:
+      1. Утечку 1C ключа (потенциальное хищение всей 1С-интеграции).
+      2. Возможность отредактировать permission matrix Administrator —
+         escalate привилегии своей роли или создать custom-роль с
+         полным доступом.
+
+    Backend поведение НЕ протестировано (PATCH не отправлял).
+    Если backend позволит сохранение через /roles edit под Director —
+    это privilege escalation severity Critical / SEV-1.
+
+
+
+
+================================================================================
+BUG-007: Менеджер видит "Интеграция" в Settings — должна быть скрыта
+================================================================================
+
+Severity:           Major (permission leak)
+Priority:           P1
+Компонент:          Frontend Client UI (sidebar Settings) +
+                    Backend permission
+Найдено:            2026-05-04 ручное QA
+
+[BLOCKED 2026-05-19] Нет активного Manager-юзера на dev. Cross-check
+для EMPLOYEE: /integration → /forbidden, backend ACL присутствует. Тот
+же класс что BUG-006 — скорее всего FIXED одним route-guard'ом, но без
+manager-user'а не подтверждено напрямую.
+
+Описание:
+    По BRD §3.5 Менеджер: "manage dictionaries/templates/routes" — НЕ
+    управляет org settings и НЕ имеет доступа к 1C-интеграции. Однако
+    под Manager'ом в Settings виден пункт "Интеграция".
+
+    Аналог BUG-024 для Manager'а.
+
+Ожидаемый результат:
+    "Интеграция" отсутствует в sidebar Manager'а. Прямой URL /integration
+    под Manager → 403.
+
+Подтверждено через MCP (2026-05-04, login as Karakalpakstan Mangit
++998913030302, role Менеджер, tenant TeamQa):
+    Sidebar Manager группа "Настройки" содержит:
+      - Организация (/organization)
+      - Интеграция (/integration)
+    (НЕТ /roles — это правильно, /roles скрыт от Manager'а)
+
+    Прямая навигация на /integration:
+      - Page LOADS (no 403)
+      - "Настроить" button на 1C-карточке active
+      - Click → modal "Ключ интеграции" с buttons:
+        aria="Показать", aria="Скопировать"
+      - Текст "Введите этот ключ в 1С для авторизации запросов в
+        BusinessHub"
+    → Manager имеет полный доступ к 1C ключу, идентично Director'у.
+    Это та же critical-class уязвимость что BUG-024.
+
+
+
+
+================================================================================
+BUG-008: Менеджер может редактировать Филиалы — должен быть read-only
+================================================================================
+
+Severity:           Major (permission matrix violation)
+Priority:           P1
+Компонент:          Frontend Client UI (/branches UI guard) +
+                    Backend (permission)
+Найдено:            2026-05-04 ручное QA
+
+[BLOCKED 2026-05-19] Нет активного Manager-юзера на dev. Cross-check
+для EMPLOYEE: /branches всё ещё открывает страницу (route-guard hole,
+см. BUG-009), но backend ACL /api/v1/branches → 403 и no CRUD buttons
+в DOM. Под Manager скорее всего тот же класс проблем. Требуется
+отдельная задача с manager-user.
+
+Описание:
+    Под Manager'ом /branches показывает action-кнопки (Создать /
+    Редактировать / Удалить). По BRD §3.5 Manager — manages
+    dictionaries/templates/routes, НЕ org структуру (branches/
+    departments/positions).
+
+Ожидаемый результат:
+    Manager: read-only branches (нет inline-кнопок, нет "+ Добавить").
+    Backend rejects POST/PUT/DELETE на /api/v1/branches под Manager.
+
+Подтверждено через MCP (2026-05-04, login as Manager Mangit):
+    /branches → page heading "Филиалы". Видны кнопки:
+      - "Добавить филиал" (top-right) — CREATE access
+      - "Таблица" / "Иерархия" view toggles
+      - "Редактировать" на строке существующего филиала "TeamQa
+        (Главный офис)"
+    Manager имеет full create/edit access к /branches. Backend
+    правильность не проверял (no PATCH attempt).
+
+    Дополнительно — Manager также имеет доступ к
+    /departments, /positions, /org-positions (sidebar links видны),
+    что нарушает разграничение org-структуры/dictionaries:
+    Manager должен манипулировать только templates/routes,
+    но физически имеет /Должности /Штатные позиции линки.
+    Однако в этих разделах не подтверждено что Manager имеет
+    edit-кнопки — нужна детальная проверка (не успел в этой сессии).
+
+
+
+
+================================================================================
+BUG-009: Сотрудник видит группу "Настройки" — должны быть скрыты
+================================================================================
+
+Severity:           Critical (permission/menu leak — Employee = base role)
+Priority:           P0
+Компонент:          Frontend Client UI (sidebar group filter)
+Найдено:            2026-05-04 ручное QA
+
+[PARTIAL FIXED 2026-05-19 verified via MCP, login as EMPLOYEE
++998906145041 tenant [E2E recon] 8dgk1l]
+Sidebar полностью переработан — Employee видит ТОЛЬКО:
+"Мой кабинет" (Расчётный лист, График работы, Отпуск), "Требуют подписи"
+(/inbox), "Исходящие документы" (/documents). Никаких Настройки,
+Администрирование, Документооборот, Оргструктура — sidebar filter
+работает. 1С-ключ через UI недоступен (/integration → /forbidden).
+Остаётся ОДНА дыра: /branches при прямом URL рендерит страницу с
+alert "Не удалось загрузить филиалы" (backend 403, данные защищены,
+просто sidebar guard map не включает /branches). То же что NEW
+FINDING 2026-05-07. Severity downgrade: Critical → Minor (cosmetic).
+
+Описание:
+    По BRD §2.3 / §3.5 Сотрудник = base role: Inbox, Мои документы,
+    Создать заявку. Никаких Settings, никакой org-структуры.
+
+    На стенде под Employee'м sidebar показывает группу "Настройки".
+    Сотрудник может зайти в:
+      - /organization (просмотр данных компании — допустимо)
+      - /roles (просмотр ролей — НЕ должен)
+      - /integration (с ключом 1С — КРИТИЧЕСКИ нет)
+
+Ожидаемый результат:
+    Sidebar Сотрудника: только Главная, Документооборот (Inbox / Мои
+    документы / Шаблоны для просмотра / Создать заявку), Профиль
+    организации (read-only). Никакой группы "Настройки", "Оргструктура"
+    отдельной с edit-возможностями.
+
+Фактический результат:
+    Группа "Настройки" видна полностью.
+
+Подтверждено через MCP (2026-05-04, login as Karakalpakstan Shimbay
++998913030303, role Сотрудник, tenant TeamQa):
+    Sidebar Employee:
+      - Главная
+      - Документооборот (стандартные пункты — OK)
+      - Оргструктура: ТОЛЬКО /branches (Филиалы) — должно быть скрыто
+      - Настройки: /organization (Организация), /integration (Интеграция)
+        ← оба нарушение, особенно /integration
+
+    Прямая навигация на /integration → page LOADS, no 403:
+      1. Видна 1C-карточка со статусом "Подключено"
+      2. Click "Настроить" → modal "Ключ интеграции" открывается
+      3. Modal содержит buttons aria="Показать" и aria="Скопировать"
+      4. Click "Показать" → ключ unmask'ится в plain text:
+         ════════════════════════════════════════════════════════
+         bh_live_86bc3bdcddc44a63816b2080870acddf
+         ════════════════════════════════════════════════════════
+         (live integration key tenant TeamQa, tenant_id
+         2a68e6cd-a7bd-454b-9596-9ba034a93062)
+
+    => Любой Сотрудник любой компании может извлечь её 1C ключ
+       через UI. Уровень доступа = идентичен Director / Manager /
+       Administrator. Эффективно — НЕТ role-based access control
+       на /integration endpoint и UI.
+
+    Severity escalated: Critical → SEV-1.
+    Priority: P0 (security).
+
+Дополнительный bug-класс:
+    BUG-024 (Director видит ключ), BUG-028 (Manager видит ключ),
+    BUG-030 (Сотрудник видит ключ) — это ОДИН класс багов. Fix должен
+    быть в одном месте (route guard + sidebar filter + backend ACL
+    на /api/v1/integrations/*). Не три разных PR.
+
+Рекомендация:
+    1. **Frontend route-guard** на /integration: запрос permissions →
+       если не Admin → redirect или 403-page.
+    2. **Sidebar filter**: пункт "Интеграция" виден только если
+       user.permissions.includes('integration.read').
+    3. **Backend ACL** на GET/PATCH /api/v1/integrations/{tenantId}/1c:
+       require role=Admin. ВАЖНО: даже если frontend hidden — backend
+       должен enforce независимо.
+    4. **Rotate exposed key** для tenant TeamQa (
+       bh_live_86bc3bdcddc44a63816b2080870acddf — уже скомпрометирован
+       т.к. был извлечён через QA-сессию).
+    5. **Audit log**: добавить запись каждого show/copy на ключ
+       с user_id + timestamp, чтобы post-mortem можно было определить
+       кто, когда видел ключ.
+
+E2E test после фикса:
+    Параметризованный test_integration_key_access по 4 ролям:
+      - Admin → modal opens, key revealable
+      - Director / Manager / Сотрудник → /integration редиректит
+        или 403, прямой API call → 403.
+
+────────────────────────────────────────────────────────────────────────────────
+[VERIFIED 2026-05-07 — STILL PRESENT + NEW FINDING]
+────────────────────────────────────────────────────────────────────────────────
+Перепроверка через MCP под Сотрудником (Nukus Bazar +998913030503,
+tenant TeamQa, role EMPLOYEE, perms = {edms: {inbox:[view],
+documents:[view, create]}} — НИ ОДНОГО branch perm).
+
+Sidebar (3 дня после первоначальной заявки):
+  - Оргструктура: ТОЛЬКО /branches видно — НЕ ПОЧИНЕНО
+  - Настройки: рендерится как пустая группа (контент скрыт)
+
+⚡ NEW FINDING — асимметричный route-guard:
+  Все остальные Оргструктура-маршруты КОРРЕКТНО редиректят на
+  /forbidden?from=...:
+    /departments    → /forbidden  ✅
+    /positions      → /forbidden  ✅
+    /org-positions  → /forbidden  ✅
+    /members        → /forbidden  ✅
+    /branches       → РЕНДЕРИТСЯ  ❌  (единственное исключение)
+
+  /branches открывается, backend GET /api/v1/branches?page=1&size=100
+  отдаёт 403 (ACL работает), UI показывает alert "Не удалось загрузить
+  филиалы". Никаких CRUD-кнопок в DOM не отрендерено — write-доступа НЕТ,
+  данные НЕ утекают. Чисто косметическая sidebar+route-guard дыра.
+
+Корень проблемы: одна недостающая запись в frontend route-guard map.
+Тот же класс что BUG-005/006/007/008/009 — sidebar filter + add /branches
+к forbidden-routes list. Один PR.
+
+Backend ACL: ✅ работает (403 на /api/v1/branches и
+/api/v1/users/departments).
+Write access: ✅ не экспонируется.
+Severity downgrade: Critical → Major (no data leak, just sidebar+guard
+inconsistency; данные защищены backend'ом).
+
+Re-confirmed by user report 2026-05-07.
+
+
+================================================================================
+BUG-010: Системные роли — раздел "Категории" в Документообороте
+         должен быть удалён (фича Категории убрана)
+================================================================================
+
+Severity:           Minor (dead UI from removed feature)
+Priority:           P3
+
+[OBSOLETE 2026-05-19 verified via MCP] Фича "Категории" ВЕРНУЛАСЬ как
+полноценный раздел: sidebar "Администрирование → Настройки → Категории",
+маршрут /categories рендерит страницу "Категории — 0 категорий,
+Добавить категорию, Древовидная структура". Permission tree в системных
+ролях содержит "Категории" (4 perms) как часть Документооборот (16/16)
+— это уже не dead UI, а живая фича. Bug закрывается как obsolete.
+Компонент:          Frontend Client UI (/roles permission tree)
+Найдено:            2026-05-04 ручное QA
+
+Описание:
+    В /roles при просмотре permission-tree системной роли есть раздел
+    "Категории" (Документооборот → Документы / Шаблоны / Маршруты /
+    Категории). Раздел "Категории" — это удалённая фича (убрали из
+    sidebar ранее). Его необходимо убрать и из permission-tree.
+
+Доказательство:
+    HTML permission-tree содержит block id="perm-mod-edms" с подразделом
+    "Категории" (Просмотр / Создание / Редактирование / Удаление = 4
+    permissions). Эти permissions висят в системе, но ни одна реальная
+    UI-страница их не использует.
+
+Ожидаемый результат:
+    "Категории" удалены из permission-tree всех 4-х системных ролей.
+    Counter общих permissions падает с 46 до 42 (4 removed).
+
+
+
+
+================================================================================
+BUG-011: Системная роль "Администратор" показывает 1/46 прав
+         (должно быть 46/46) — вся таблица permissions выглядит unchecked
+================================================================================
+
+Severity:           Major (display bug masking real permissions OR
+                    real permission misconfiguration in seed)
+Priority:           P1
+Компонент:          Frontend Client UI (/roles edit Administrator) +
+                    возможно Backend seed-data SystemRole.ADMINISTRATOR
+Найдено:            2026-05-04 анализ HTML edit-formы Администратора
+
+[FIXED 2026-05-19 verified via MCP, login as ADMINISTRATOR
++998905555518 recon tenant] /roles → list shows: Сотрудник 5/58,
+Менеджер 24/58, Директор 9/58, Администратор 58/58 (полный доступ).
+Detail edit Администратор: "58 / 58 Права доступа" + permission tree
+с 4 группами: Документооборот 16/16 (Документы/Шаблоны/Маршруты/
+Категории), Кадры 23/23, Финансы 5/5, Настройки 12/12. Counter
+expanded с 46 до 58 (новая группа Финансы + расширенные Кадры/
+Настройки). Видны корректно checked checkboxes.
+
+Описание:
+    На странице редактирования системной роли "Администратор":
+      - Counter показывает "1 / 46 Права доступа"
+      - Все checkbox'ы permission tree являются unchecked
+      - Это ровно как роль "Сотрудник" (3/46) или "Менеджер" (28/46)
+
+    По BRD §2.3 Администратор имеет **ВСЕ** права (full access). Должно
+    быть "46 / 46" с всеми checkbox'ами checked.
+
+    Это либо:
+    1. Display bug: в БД у Admin permissions = 46, но UI показывает не
+       те данные (возможно подгружает permissions для другой роли).
+    2. Backend seed bug: SystemRole.ADMINISTRATOR в БД имеет ТОЛЬКО 1
+       permission. Тогда реальные права админа реализованы через
+       hardcoded `is_admin` flag, а не через permissions table.
+
+Доказательство:
+    HTML edit Administrator: <p>1 / 46 Права доступа</p>
+    Все <input> у permission-checkbox'ов имеют data-indeterminate="false"
+    и НЕ имеют Mui-checked.
+
+Сравнение с другими ролями (counter в HTML):
+    - Сотрудник: 3/46 — правильно (low permissions)
+    - Директор: 11/46 — правильно (oversight)
+    - Менеджер: 28/46 — правильно (manage docs/templates/routes)
+    - Администратор: 1/46 — НЕПРАВИЛЬНО, должно быть 46/46
+
+Рекомендация:
+    1. Проверить backend seed-data для SystemRole.ADMINISTRATOR. Если
+       permissions = 1 — добавить все 46.
+    2. Или подтвердить что Admin работает через bypass-flag, и тогда
+       UI должен это отражать (либо все 46 показывать checked
+       автоматически, либо текст "Полный доступ" вместо счётчика).
+
+
+
+
+================================================================================
+BUG-012: При создании документа из шаблона поле "Заголовок" дублирует
+         название шаблона — нужно убрать
+================================================================================
+
+Severity:           Minor (UX redundancy)
+Priority:           P3
+Компонент:          Frontend Client UI (CreateDocumentPage / wizard)
+Найдено:            2026-05-04 ручное QA
+
+[OBSOLETE 2026-05-19 verified via MCP] Create-document page полностью
+переделан. Никакого отдельного "Заголовок" поля больше нет. Поле "Вид
+документа" автоматически prefilled названием шаблона ("ReconTemplate
+0519") + "Ответственный" prefilled именем автора. Структура полей:
+Вид документа / Ответственный / Подразделение / Маршрут (Автор +
+шаги) / file upload zone. Дубликации нет, тот UX-баг закрылся
+вместе с редизайном.
+
+Описание:
+    На странице создания документа после выбора шаблона в форме
+    показывается поле "Заголовок". Но у выбранного шаблона уже есть
+    название, и оно по умолчанию используется как заголовок документа.
+
+    Двойное поле сбивает с толку: пользователь не понимает, должен ли
+    он переписать заголовок или оставить дефолт.
+
+Ожидаемый результат:
+    После выбора шаблона:
+      - Либо поле "Заголовок" скрыто, документ называется именем
+        шаблона (+ счётчик/дата для уникальности).
+      - Либо поле "Заголовок" остаётся, но prefilled именем шаблона
+        и помечено как "необязательно — оставьте чтобы использовать
+        название шаблона".
+
+Фактический результат:
+    Поле "Заголовок" пустое и обязательное, дублирует название
+    выбранного шаблона.
+
+Рекомендация:
+    1. Скрыть поле "Заголовок" при mode="из шаблона" (auto-derive
+       из template.name).
+    2. При mode="свободный" поле остаётся обязательным.
+    3. Если решено оставить — prefill template.name и сделать поле
+       optional с подсказкой "оставьте пустым чтобы использовать
+       название шаблона".
+
+
+
+
+================================================================================
+BUG-013: Если у шаблона есть прикреплённый файл, он должен
+         автоматически быть в "Приложениях" документа из шаблона
+================================================================================
+
+Severity:           Major (data loss / wrong default state)
+Priority:           P2
+Компонент:          Frontend Client UI (CreateDocumentPage из шаблона) +
+                    Backend (template → document file inheritance)
+Найдено:            2026-05-04 ручное QA
+
+[BLOCKED 2026-05-19] Repro требует создать template с PDF-файлом
+(template-create UI имеет "Загрузить" + dropzone) и далее создать
+документ из этого template, чтобы убедиться что файл подтягивается в
+"Приложения". В пределах этой задачи не выполнено по времени. Шаблон
+ReconTemplate 0519 был создан без файла; нет dataset'а для верификации.
+Текущий UI: create-doc page имеет dropzone "Перетащите файл сюда" —
+пустую при открытии doc из template-без-файла. Поведение для template-с-
+файлом нужно отдельно проверить.
+
+Описание:
+    При создании документа из шаблона, у которого был загружен
+    файл (.pdf/.docx — см. BUG-032 flow), раздел "Приложения" в
+    создаваемом документе пустой. Файл шаблона не наследуется.
+
+    По логике: шаблон = заготовка документа. Если файл — часть
+    заготовки, то документ должен начинаться с этим файлом. Иначе
+    зачем в шаблоне был upload-step?
+
+Ожидаемый результат:
+    Document.attachments[0] = Template.contentFile, прикреплён
+    автоматически. Юзер может оставить или заменить.
+
+Фактический результат:
+    Приложения пустые — файл шаблона потерян. Юзер должен
+    повторно загружать.
+
+Связь с BUG-032:
+    BUG-032 показал что file upload в template создаёт силуэт
+    template без реально сохранённого файла (silent failure при
+    400 от /pdf-file endpoint). Возможно BUG-035 — следствие
+    BUG-032: backend хранит template.contentFile=null, и поэтому
+    документ "наследует" пустоту. Сначала подтвердить с реальным
+    PDF (не fake .doc), потом переоткрыть.
+
+
+
+
+================================================================================
+BUG-014: При редактировании шага маршрута нет кнопки "Сохранить" —
+         изменения сохраняются молча по нажатию "Назад"
+================================================================================
+
+Severity:           Major (UX confusion / accidental edits)
+Priority:           P2
+Компонент:          Frontend Client UI (Route Builder / step settings panel)
+Найдено:            2026-05-04 ручное QA
+
+[FIXED 2026-05-19 verified via MCP, login as ADMINISTRATOR
++998905555518 recon tenant] /routes/new → click на Шаг 1 → edit-step
+панель содержит явные кнопки "Отмена" + "Сохранить" + "Удалить шаг"
+(в дополнение к глобальному "Сохранить" в шапке маршрута). User имеет
+explicit confirm/cancel UX. Регрессионный тест после фикса можно
+писать на edit-step-panel save/cancel + dirty-state visual.
+
+Описание:
+    В Route Builder при клике на шаг открывается боковая панель с
+    полями (Название, Тип шага, Тип действия, Срок, Тип исполнителя,
+    Исполнитель). Внизу панели только кнопка "Удалить шаг" — нет
+    "Сохранить" / "Применить".
+
+    Пользователь меняет поля и нажимает "Назад" → изменения уже
+    persisted в state маршрута. Это нарушает классический UX
+    "edit → confirm or cancel": нет возможности отменить изменения,
+    нет visual confirmation что изменения сохранены.
+
+Ожидаемый результат:
+    Боковая панель должна содержать:
+      - "Сохранить" (primary, активна только если есть изменения)
+      - "Отмена" (откатывает изменения в текущей сессии редактирования)
+    + visual indication "Несохранённые изменения" пока не нажали
+    Сохранить.
+
+    Альтернатива (auto-save pattern):
+      - Если решено auto-save при изменении полей — показывать
+        "Изменения сохранены" toast/badge каждый раз.
+      - Кнопка "Назад" должна явно говорить "Готово" или "Закрыть".
+
+Фактический результат:
+    Никакой обратной связи. Пользователь не уверен сохранились ли
+    изменения. Случайные edits не откатишь.
+
+Рекомендация:
+    Добавить explicit "Сохранить" кнопку. Это standard pattern для
+    edit forms — особенно важно для маршрутов где ошибка в
+    permission/actor → broken workflow → задачи попадают не тем
+    людям.
+
+
+
+
+================================================================================
+BUG-015: У Администратора (Client UI) нет какой-то ожидаемой вкладки
+         (точное место требует уточнения у репортёра)
+================================================================================
+
+Severity:           Major (missing functionality)
+Priority:           P2
+Компонент:          Frontend Client UI (sidebar / top nav под Administrator)
+Найдено:            2026-05-04 ручное QA
+
+[OBSOLETE 2026-05-19 verified via MCP] Sidebar полностью переработан.
+Под Administrator сейчас доступно: Главная, Мой кабинет (Расчётный лист/
+График работы/Отпуск — НОВЫЕ HR-разделы), Требуют подписи (/inbox),
+Исходящие документы (/documents), Документооборот (Шаблоны/Маршруты
+согласований), Администрирование (Компания: Пользователи/Должности/
+Организации/Отделы; Пользователи: Физические лица/Системные роли;
+Настройки: Филиалы/Штатные позиции/Категории/Интеграция 1С). /documents
+больше не имеет status-tabs (Все/Черновик/В работе/Завершён) — теперь
+toggle Канбан/Таблица + Фильтр по дате. Originальная жалоба "нет
+вкладки" необратимо неактуальна — UI пере-моделирован. Если конкретная
+проблема всё ещё есть, нужно reopen с свежим repro.
+
+Описание:
+    Репорт: "Нет вкладки у Администратора". Точное место не
+    конкретизировано. Возможные интерпретации:
+      a. В /documents под Админом отсутствует вкладка статуса
+         (например "Все"/"Черновик"/"В работе"/"Завершён"
+         — одной из них нет?)
+      b. В sidebar отсутствует какой-то раздел который должен быть
+         (например "Кадры" / "Финансы" — упоминаются в navigation
+         групп, но возможно не реализованы)
+      c. В user-menu нет какого-то action (например "Профиль" /
+         "Настройки аккаунта")
+
+Подтверждено через MCP (2026-05-04, login as Administrator TeamQa):
+    Sidebar: Главная, Документооборот (Inbox/Мои документы/
+      Мои заявки/Шаблоны/Маршруты), Оргструктура (Пользователи/
+      Филиалы/Отделы/Должности/Штатные позиции), Настройки
+      (Организация/Системные роли/Интеграция).
+    /documents: tabs Все, Черновик, В работе, Завершён, Отменён,
+      В архиве, Отправлен в 1С, Ошибка выгрузки.
+    /inbox: единый список (без статус-tabs).
+
+    Действительно ли одной из этих вкладок нет — нужно уточнение.
+
+Действие:
+    Запросить у репортёра скриншот / точное название вкладки которая
+    отсутствует. До уточнения — bug в STATUS=Needs Info.
+
+Hypothesis:
+    Часто эта жалоба связана с "Кадры" / "Финансы" — Manager (по
+    нашей проверке) видит permissions для этих групп, но самих
+    sidebar-групп нет ни у одной роли. Возможно репорт о том что
+    Admin тоже не видит, хотя должен.
+
+
+
+
+================================================================================
+BUG-016: Документы где текущий пользователь — согласующий/подписант
+         показываются в "Мои документы" вместо "Требуют подписи"
+================================================================================
+
+Severity:           Major (workflow ergonomics — юзер пропускает задачи)
+Priority:           P1
+Компонент:          Backend (документ-листинг фильтрация по роли в
+                    workflow) + Frontend (роутинг между inbox/documents)
+Найдено:            2026-05-04 ручное QA
+
+[BLOCKED 2026-05-19] Repro требует полноценный workflow: создать
+шаблон → создать route с шагом на actor B → создать doc и отправить →
+залогиниться как B → проверить /inbox vs /documents. У recon-tenant
+0 routes (создание route через UI с активным actor B требует
+multi-account setup внутри теста). Cross-check на /inbox + /documents
+как admin показал пустые списки (нет workflow в системе). EMPLOYEE
+доступ к /inbox показал "Задания отсутствуют" — нет активных задач
+для verification. Требуется отдельная задача с полноценным workflow
+setup.
+
+Описание:
+    BRD §2.6/§3.3: "Мои документы" = документы где user = автор.
+    "Требуют подписи" (/inbox) = документы где user — current actor
+    в маршруте (approver/signer/etc).
+
+    Сейчас документ где юзер фигурирует в шаге маршрута попадает
+    в /documents (Мои документы). Но это не его документ — он
+    должен подписать чужой документ.
+
+    Эффект: юзер открывает "Мои документы" → видит чужие задачи →
+    путаница. Параллельно /inbox может быть пуст, и юзер думает
+    что задач нет.
+
+Ожидаемый результат:
+    Document listing logic:
+      - /documents (Мои документы): document.author_id = current_user.id
+      - /inbox (Требуют подписи): current_actor_user_ids contains
+        current_user.id (т.е. сейчас его очередь действовать)
+    Один документ может быть в обоих если юзер автор И current
+    actor в его собственном маршруте, но обычно эти множества
+    непересекающиеся.
+
+Фактический результат:
+    Логика смешана. Документы попадают в "Мои" даже если юзер
+    в них только action-target, не автор.
+
+Рекомендация:
+    Backend filtering API:
+      - GET /documents?filter=mine → author_id = me
+      - GET /documents?filter=inbox → me ∈ workflow.current_step.actors
+        AND workflow.status = "in_progress"
+    Frontend route bindings:
+      - /documents → filter=mine
+      - /inbox → filter=inbox
+
+Связь с BUG-040:
+    Inbox/Мои документы misclassification + return-to-rework
+    статус = "Отклонён" (BUG-040) = двойная путаница для участников
+    workflow. Юзер не понимает где документ и в каком статусе.
+
+
+
+
+================================================================================
+BUG-017: Параллельное согласование: одобрение одним участником
+         автоматически закрывает шаг для всех — должны ждать всех
+================================================================================
+
+Severity:           Critical (workflow integrity violation)
+Priority:           P0
+Компонент:          Backend (workflow engine — parallel step semantics)
+Найдено:            2026-05-04 ручное QA
+
+[BLOCKED 2026-05-19] Repro требует parallel-step workflow с 2+
+активными actor-users + admin отправляет doc. На recon-tenant 0
+routes, 4 EMPLOYEE active (можно использовать как параллельных
+actors), но создание полного workflow + отправка вне scope этой
+задачи (creates_data + multi-actor flow). Backend endpoint
+/api/v1/edms/routes пока 500 в нашем X-Tenant-Id запросе — мог быть
+тоже broken. Требуется отдельная задача под полный workflow E2E.
+
+Описание:
+    По BRD §3.4 / §9 параллельный шаг с N участниками: все N должны
+    согласовать → шаг complete. Один отклонил → шаг rejected
+    (entire workflow stops).
+
+    Фактическое поведение: один из участников нажал "Согласовать" →
+    система помечает шаг complete и аналогично "согласует" за
+    остальных N-1 участников (они даже не успели открыть документ).
+
+    Это эквивалентно single-actor шагу — параллельность сломана.
+
+    Эффект:
+      - Любой один participant может за всех "проштамповать"
+        документ → потеря accountability (не понятно кто реально
+        проверил).
+      - Если participants должны были проверять РАЗНЫЕ аспекты
+        (юрист — legal, финансист — budget) — ни один из них не
+        дойдёт до проверки если кто-то торопится и согласует первым.
+      - SoD (separation of duties) нарушено.
+
+Ожидаемый результат:
+    Параллельный шаг с участниками A, B, C:
+      - A approves → шаг status="awaiting" (1/3 completed),
+        B and C still pending
+      - B approves → шаг status="awaiting" (2/3)
+      - C approves → шаг status="completed" → next step starts
+      - На любом этапе если X rejects → workflow stops (BRD §9
+        правило "1 отклонил → весь process останавливается")
+
+Фактический результат:
+    A approves → шаг completed, B и C автоматически "согласованы"
+    (или их task просто исчезает без действия).
+
+Рекомендация:
+    Backend WorkflowEngine.handleApproval:
+      - Если step.type == PARALLEL:
+        участник X отметился approved → step.completedActors.add(X)
+        if step.completedActors.size < step.totalActors → step
+          status remains 'in_progress'
+        else → step.status = 'completed', advance to next step
+      - Если step.type == PARALLEL и X отметился rejected → step.
+        status = 'rejected', workflow.status = 'stopped'
+
+    Регрессионный test:
+    test_parallel_step_one_approve_does_not_complete_others.
+    Создать parallel step из 2 actors → A approves → проверить
+    что B's inbox всё ещё содержит документ как pending.
+
+
+
+
+================================================================================
+BUG-018: При отправке на доработку статус документа становится
+         "Отклонён" вместо "На доработку" + не видны комментарии
+         от того кто отправил на доработку
+================================================================================
+
+Severity:           Major (status confusion + missing audit info)
+Priority:           P1
+Компонент:          Backend (workflow status enum) + Frontend
+                    (status display + comments view)
+Найдено:            2026-05-04 ручное QA
+
+[BLOCKED 2026-05-19] Repro требует полноценный workflow с return-to-
+rework action. Без активных routes/workflow на recon-tenant
+verification невозможен. Same scope как BUG-016/BUG-017 — отдельная
+multi-user E2E задача.
+
+ВНИМАНИЕ: BUG-018 в Сводке выше (старое описание) описывает Admin
+disable self — это разные баги под одним номером! По телу описания
+этот BUG-018 — про статус "Отклонён" vs "На доработку"; в Сводке
+строка BUG-018 == "Return-to-rework показывает Отклонён vs
+На доработку". Admin-disable-self был помечен FIXED 2026-05-18 в
+memory test_fixtures.md, но в этом файле такого BUG-018 нет.
+Recheck Admin disable self в /members → собственная строка имеет
+disabled "Отключить"+"Уволить" buttons → FIXED (см. BUG-018 (admin
+disable self) в memory; не путать с BUG-018 (return-rework) здесь).
+
+Описание:
+    BRD §2.7 различает действия: approve, sign, reject, return.
+    "Return" (вернуть на доработку) ≠ "reject" (отклонить):
+      - reject = workflow stops, документ финально отвергнут
+      - return = документ возвращается автору с комментарием,
+        автор правит, отправляет заново → workflow начинается с
+        первого шага (BRD §9 правило "Возврат → процесс с начала")
+
+    Сейчас при "return" UI показывает статус "Отклонён" — это
+    неправильное status name для return-action.
+    Дополнительно: комментарий который написал participant при
+    return-action не отображается на странице документа (или
+    отображается, но не где ожидает автор).
+
+Ожидаемый результат:
+    Статус документа после return:
+      - DocumentStatus = "Returned" / "На доработку"
+      - Visual: distinct color from "Отклонён" (например жёлтый
+        вместо красного)
+      - Workflow.status = "in_rework" (или эквивалент)
+    Комментарии:
+      - Comment from return-actor видим автору на document detail
+        page в timeline
+      - Шаг workflow в timeline помечен "Возвращён на доработку"
+        с актором + датой + комментарием
+
+Фактический результат:
+    Status = "Отклонён" (та же metka что и для reject)
+    Comment отсутствует или не показан где надо
+
+Рекомендация:
+    1. Backend: ввести separate DocumentStatus.RETURNED enum value.
+       PATCH /documents/{id}/return endpoint должен set этот status,
+       не REJECTED.
+    2. Frontend: status badge с RETURNED → жёлтый, текст
+       "На доработку".
+    3. Frontend: на document detail page timeline-секция должна
+       показывать last return-action: actor name + comment + date.
+    4. Если автор может re-submit без правок: rebut workflow с
+       первого шага. После re-submit статус → "В работе" заново.
+
+Связь с BUG-038:
+    RETURNED документ должен попадать в /inbox автора (требует его
+    действия — fix или re-submit), а не оставаться в /documents
+    как passive "Мои документы".
+
+
+
+
+================================================================================
+BUG-019: При создании документа после выбора шаблона раздел
+         "Документ из системы" пустой — должен содержать список
+         доступных source-документов
+================================================================================
+
+Severity:           Major (functionality broken)
+Priority:           P2
+Компонент:          Frontend Client UI (CreateDocumentPage source-document
+                    selector) + Backend (related-documents API)
+Найдено:            2026-05-04 ручное QA
+
+[OBSOLETE 2026-05-19 verified via MCP] Раздел "Документ из системы"
+полностью удалён из CreateDocumentPage. Текущий create-doc UI:
+upload zone слева + form (Вид документа, Ответственный, Подразделение,
+Маршрут, Автор) справа. Никаких "source document" combobox'ов нет.
+Bug закрывается как obsolete.
+
+ВНИМАНИЕ: BUG-019 в Сводке (старое описание) == "fresh tenant seed
+positions" (Finansist/Yurist/Dasturchi). Этот BUG-019 в теле — про
+combobox в CreateDocumentPage. Разные баги, путаница имён.
+Re-check "fresh tenant seed positions": recon-tenant
+[E2E recon] 8dgk1l имеет 0 positions, 0 departments, 0 seed
+job-titles → FIXED 2026-05-18 (см. memory test_fixtures.md), снова
+re-confirmed today.
+
+Описание:
+    На странице создания документа после выбора шаблона есть option
+    "Документ из системы" — должен дать выбрать существующий документ
+    как источник (например, родительский документ для acceptance act,
+    приложение к договору и т.д.).
+
+    Фактически: дропдаун пустой даже если в системе есть документы
+    (видны в /documents).
+
+Ожидаемый результат:
+    Дропдаун "Документ из системы" заполнен релевантными документами
+    тенанта (по фильтру: status="Завершён" или другой подходящий
+    set), либо empty state с понятной подписью "Нет подходящих
+    документов в системе".
+
+Фактический результат:
+    Пустой combobox без error-state, без подсказки.
+
+Похоже на BUG-026:
+    Тот же класс — combobox UI элемент, источник данных пустой.
+    Возможно одна и та же причина: API endpoint возвращает [] из-за
+    permission filter / wrong tenant scope / неправильный query.
+
+Рекомендация:
+    1. Проверить какой endpoint frontend вызывает для этого dropdown
+       (likely GET /documents?status=completed или
+       GET /documents/source-candidates).
+    2. Если endpoint returns [] — check permission filter + tenant_id
+       scoping.
+    3. Если endpoint not implemented — implement или скрыть option
+       пока не готово (показать "Скоро" badge).
+    4. Frontend: empty state должен быть понятным —
+       "Нет завершённых документов в системе. Сначала создайте
+       и завершите документ."
+
+
+
+
+================================================================================
+BUG-020: В диалоге "Добавить сотрудника" phone-поле без захардкоженного
+         префикса +998 — несоответствие с /login и Admin UI
+================================================================================
+
+Severity:           Minor (data consistency / UX)
+Priority:           P3
+Компонент:          Frontend Client UI (AddEmployeeDialog phone input)
+Найдено:            2026-05-05 при пересоздании test fixtures
+
+[STILL BROKEN 2026-05-19 verified via MCP, login as ADMINISTRATOR
++998905555518] /members → Add Employee → input name="phone" placeholder
+"+998911111111" БЕЗ locked-prefix. Backend сохраняет phone как
+"998906145041" (12 цифр без +) — проверено в /api/v1/users/members
+response. /login использует locked "+998" prefix (видно на phone-input).
+Inconsistency сохраняется, fix не применён.
+
+[STILL BROKEN 2026-05-13] verified MCP recon после frontend redesign.
+Add Employee dialog теперь имеет разделённые поля Имя*/Фамилия*/Отчество +
+ПИНФЛ + Системная роль + Должность + Отдел, но input "Телефон*" по-прежнему
+ждёт полные 13 символов с +998 (placeholder `+998911111111`), без locked
+prefix. Fix не применён.
+
+Описание:
+    На /login и в Admin UI tenant create форма телефона имеет
+    захардкоженный prefix "+998" (locked label слева) и принимает
+    только 9 цифр. Backend получает canonical "+998<9digits>".
+
+    На Client UI /members → "Добавить сотрудника" поле "Телефон"
+    — обычный text input с placeholder "+998911111111" без locked
+    prefix. Если ввести 9 цифр (как в /login flow) — backend
+    сохраняет ровно "913030301" БЕЗ +998. Если ввести с +998 —
+    сохраняет с +998.
+
+    Результат: данные хранятся в БД в смешанном формате в зависимости
+    от того, через какую форму создан пользователь.
+
+Доказательство (TeamQa, 2026-05-05):
+    /members список показывает:
+      Бегимбаев Наврузбек     +998913030519   ← через Admin UI
+      Karakalpakstan Nukus    913030301       ← через Client UI Add Employee
+      Karakalpakstan Mangit   913030302       ← через Client UI Add Employee
+      Karakalpakstan Shimbay  913030303       ← через Client UI Add Employee
+    Скриншот: teamqa-recreated-2026-05-05.png
+
+Ожидаемый результат:
+    Phone input на /members → "Добавить сотрудника" использует тот же
+    component что /login (PhoneInput с locked +998 prefix + numeric-
+    only 9 цифр). Backend получает canonical "+998<9digits>" во всех
+    flow. БД хранит ВСЕ phone'ы в одном формате.
+
+Фактический результат:
+    Plain text input. Backend сохраняет phone "as-is" — данные в
+    смешанных форматах между разными UI flow.
+
+Потенциальные последствия:
+    - Поиск в /members по "+998913030301" не находит Nukus (хранится
+      как "913030301").
+    - Дубликат-чек при добавлении: можно создать `+998913030302`
+      рядом с `913030302` если backend сравнивает строки напрямую.
+    - 1С интеграция: Mock 1C обычно отправляет phone с +998 — может
+      не сматчить с уже существующим employee → создание дубликата
+      вместо обновления.
+    - Любой downstream процесс который сравнивает phone'ы напрямую
+      без нормализации.
+
+Рекомендация:
+    1. Frontend: использовать тот же `<PhoneInput>` component с
+       locked "+998" что в LoginPage и AdminUI TenantCreateForm.
+    2. Backend: добавить canonicalization layer на receive — все
+       phones приводить к "+998<9digits>" перед save в БД,
+       independent от того что прислал frontend.
+    3. Migration: одноразовый script для нормализации существующих
+       phone'ов в БД к canonical формату (UPDATE users SET phone =
+       '+998' || phone WHERE phone NOT LIKE '+998%').
+
+Связь с BUG-015:
+    BUG-015 (FIXED) был про Admin UI login phone canonicalization.
+    Аналогичная проблема в другом UI flow. Single-fix pattern:
+    общий PhoneInput component + backend layer для всего тенанта.
+
+
+================================================================================
+BUG-021: Document detail page — большая left-area для содержимого
+         документа пустая (preview/контент не отображается)
+================================================================================
+
+Severity:           Major (core feature broken — document content invisible)
+Priority:           P1
+Компонент:          Frontend Client UI (DocumentDetailPage content viewer) +
+                    Backend (template content storage / document content fetch)
+Найдено:            2026-05-05 ручное QA
+
+[OBSOLETE 2026-05-19 verified via MCP] DocumentDetailPage полностью
+переработан. Нет больше "большой left-area для preview" — теперь UI
+такой же как create-doc: dropzone "Перетащите файл сюда" слева +
+form с полями (Вид документа, Организация, Дата, Номер, Ответственный,
+Подразделение, Маршрут) справа. Created doc DOC-551 (черновик из
+ReconTemplate 0519) показывает именно такой layout. Original baseline
+("70% empty white frame") не соответствует current UI. Bug закрывается
+как obsolete; если есть проблема с file preview в новом layout —
+открыть новый bug с актуальным repro.
+
+Описание:
+    На странице деталей документа /documents/{id} большая левая
+    область (≈70% ширины) предназначена для отображения содержимого
+    документа: PDF preview, рендеринг текста шаблона, или просмотр
+    прикреплённого файла. Сейчас эта область полностью пустая —
+    видна только белая рамка.
+
+    Правая панель (Активность / Маршрут / Поля) работает: показывает
+    timeline ("Shimbay Karakalpakstan создал документ 05.05.2026"),
+    статус "В работе", метку DOC-151.
+
+    Заголовок и метаданные на верху корректные:
+      - DOC-151, "В работе"
+      - Увольнение
+      - Shimbay Karakalpakstan, 05.05.2026
+      - Route: TeamQa → TeamQa
+
+Шаги воспроизведения:
+    1. Логин Сотрудником (Shimbay).
+    2. /documents → Создать документ → выбрать шаблон "Увольнение"
+       (один из импортированных из 1С).
+    3. Заполнить поля + маршрут → Создать.
+    4. Открыть созданный документ из списка → /documents/{doc_id}.
+    5. Левая область — пустая. Содержимого шаблона / preview нет.
+
+Ожидаемый результат:
+    Левая область отрисовывает один из:
+      - PDF preview (если шаблон содержал PDF)
+      - Рендеринг rich text (если шаблон с текстовым содержимым)
+      - Embedded viewer для DOC/DOCX
+      - Empty-state с понятным сообщением "Содержимое шаблона
+        недоступно" если файл реально отсутствует.
+
+Фактический результат:
+    Полностью белая рамка, никаких placeholder'ов, спиннеров или
+    error-сообщений. Пользователь не понимает что должно быть и
+    почему пусто.
+
+Возможные причины:
+    1. Backend сохранил template без contentFile (связь с моим
+       earlier finding по BUG-032: /pdf-file endpoint silently
+       возвращал 400 при upload). Документ создан, ссылается на
+       template, у template content=null → нечего рендерить.
+    2. Backend хранит file, но document fetch не возвращает
+       content URL (отсутствует поле в response).
+    3. Frontend получает content, но viewer-компонент
+       (PDFViewer/RichTextRenderer) не подключён или ломается
+       silent.
+    4. Permission filter: документ создал Сотрудник, но содержимое
+       не отдаётся на read из-за permission ACL.
+
+Доказательство:
+    Скриншот: DOC-151 "Увольнение" в работе у Shimbay
+    Karakalpakstan. Левая область пустая.
+
+Рекомендация:
+    1. Проверить network tab при открытии /documents/{id}:
+       какой запрос делается за content, какой response.
+       Если 200 + пустой → backend issue, если 4xx silent →
+       frontend swallows error.
+    2. Backend: убедиться что Template.contentFile / contentText
+       сохраняется при template create (см. BUG-013 — file from
+       template not inherited).
+    3. Frontend: добавить error/empty states в content viewer:
+         - skeleton/spinner пока loading
+         - error-toast если 4xx/5xx
+         - empty-state с текстом "Содержимое шаблона не задано"
+           если контент действительно null.
+    4. E2E test после фикса:
+         test_document_from_template_with_content_renders_preview
+         — создать шаблон с PDF → создать документ → открыть
+         detail → assert preview не пустой.
+
+Связь:
+    - BUG-013 (file шаблона не наследуется в Приложения): тот же
+      класс — content из template не propagate к document.
+    - Бывший BUG-032 (FIXED 2026-05-05 — .doc upload не висит) —
+      hang починен, но silent /pdf-file 400 могло остаться. Если
+      template content реально null → BUG-021 = downstream effect.
+
+
+================================================================================
+BUG-022: При подписании документа через E-IMZO выдаёт ошибку 404
+================================================================================
+
+Severity:           Critical (signing workflow broken)
+Priority:           P0
+Компонент:          Frontend Client UI (sign action) + Backend
+                    (E-IMZO sign endpoint) + EIMZO plugin integration
+Найдено:            2026-05-05 ручное QA
+                    [VERIFIED 2026-05-12 — backend полностью down на /api/v1/*
+                    business endpoints, см. BUG-024; перепроверка sign-flow
+                    откладывается до фикса BUG-024.]
+
+[BLOCKED 2026-05-19] Требует физическую ЭЦП-флешку (eimzo_local_only).
+Без hardware repro невозможен. EIMZO_DOMAIN_KEYS env var присутствует
+в runtime/env.js на Client UI — frontend готов работать с EIMZO. Нужен
+прогон на машине с флешкой.
+
+Описание:
+    При попытке подписать документ через E-IMZO (нажатие кнопки
+    "Подписать" с физической ЭЦП-флешкой) запрос возвращает
+    HTTP 404. Подписание не происходит, документ остаётся в статусе
+    "В работе".
+
+    Это блокирует основной кейс системы — workflow с действием
+    "sign" по BRD §2.7 не может быть завершён.
+
+Шаги воспроизведения:
+    1. Создать документ с маршрутом, у которого один из шагов
+       имеет тип действия "ЭЦП подпись" + signer = текущий
+       пользователь.
+    2. Залогиниться signer'ом.
+    3. /inbox → открыть документ → "Подписать" (или эквивалент).
+    4. EIMZO-плагин активируется, может запросить выбор
+       сертификата.
+    5. После выбора — backend возвращает 404.
+
+Ожидаемый результат:
+    После выбора сертификата → frontend отправляет sign-payload
+    (signed hash + cert chain) на backend → backend сохраняет
+    подпись → workflow advance → status "Подписан"/"Завершён"
+    или next step.
+
+Фактический результат:
+    HTTP 404 от backend. Подпись не сохраняется. Документ в том
+    же статусе.
+
+Гипотезы:
+    1. Endpoint URL переименован/удалён без обновления frontend.
+       Frontend стучится в `/api/v1/.../sign` (deprecated) вместо
+       нового URL.
+    2. Path param wrong: docId / stepId / signatureId не находится
+       backend'ом → ResourceNotFoundException → 404.
+    3. Документ был создан без content (см. BUG-021) → нечего
+       подписывать → backend 404 на content lookup.
+    4. EIMZO callback URL невалидный.
+
+Связанные ограничения тестирования:
+    - EIMZO требует физическую ЭЦП-флешку (`@eimzo_local_only`
+      marker). На CI этот тест skip'ается.
+    - Альтернативная проверка: открыть DevTools → Network →
+      нажать "Подписать" → найти точный URL который вернул 404 →
+      проверить что соответствующий route реально существует
+      на backend.
+
+Доказательство:
+    Manual QA report 2026-05-05 (нужны скриншот/exact URL +
+    response body для точной диагностики).
+
+Рекомендация:
+    1. Frontend: snapshot exact URL и payload, отправляющиеся на
+       /sign endpoint. Сравнить с backend route registration.
+    2. Backend: grep по `/sign` / EIMZO routes в backend repo —
+       какие endpoint'ы зарегистрированы. Если deprecated ушли
+       без alias — добавить redirect / fix frontend URL.
+    3. Frontend: на 404 показывать понятный error:
+       "Сервер не нашёл endpoint подписания. Сообщите администратору."
+       Не silent fail.
+    4. После фикса добавить regression test
+       (`@eimzo_local_only` marker) который проходит signing flow
+       end-to-end на local-машине с флешкой.
+
+
+================================================================================
+BUG-023: Client UI silent fail на 404 AUTH_USER_NOT_FOUND при OTP request
+================================================================================
+
+Severity:           Major
+Priority:           P2
+Компонент:          Frontend Client UI (LoginPage / OTP request handler)
+Найдено:            2026-05-12 при пересоздании test fixtures после wipe
+
+[STILL BROKEN 2026-05-19 verified via MCP] /login → phone "+998999999999"
+(не существует) → click "Отправить код" → backend 404 с
+{"detail":"Указанный номер телефона не зарегистрирован в системе",
+"code":"AUTH_USER_NOT_FOUND","title":"Пользователь не найден"} (RFC 7807
+shape). Frontend swallows: notifications-region empty, ни alert, ни
+toast, ни inline-error, кнопка осталась active "Отправить код"
+(никакой visual feedback). Это тот же класс что BUG-001.
+
+[LIKELY STILL BROKEN 2026-05-13] прямой repro не выполнен (фокус был на
+sweep остальных багов), но frontend login handler не менялся видимо —
+runtime/env.js всё ещё broken (BUG-027 STILL BROKEN), и в общем silent-fail
+паттерн (BUG-001 family) не починен. Нужно отдельная проверка —
+ввести несуществующий phone и зафиксировать что либо есть toast/inline
+error, либо его нет.
+
+Описание:
+    На странице /login после wipe dev-БД (между 2026-05-07 и 2026-05-12)
+    ввод phone несуществующего пользователя и нажатие "Отправить код"
+    приводит к silent fail. Backend возвращает 404 с понятным телом
+        {"detail":"AUTH_USER_NOT_FOUND","title":"Пользователь не найден",...}
+    но frontend ничего не показывает: region "Notifications" пуст,
+    форма не разлочивается, кнопка может оставаться в loading-state,
+    никаких inline-сообщений у поля Телефон.
+
+    Это тот же класс что BUG-001 (silent 4xx обработка), но проявляется
+    в Client UI на самом первом step'е логина — пользователь даже не
+    может понять что его phone ещё не в системе.
+
+Шаги воспроизведения:
+    1. Открыть https://dev-hub-client.greatmall.uz/login.
+    2. Ввести phone которого нет в системе (например +998913030519
+       сразу после wipe, до пересоздания tenant'а).
+    3. Click "Отправить код".
+
+Ожидаемый результат:
+    Toast или inline-error: "Пользователь с таким телефоном не найден"
+    (можно с CTA "Обратитесь к администратору").
+    Кнопка "Отправить код" разблокирована, форма доступна.
+
+Фактический результат:
+    Тишина. Notifications-region пустой. Кнопка может остаться
+    залочена. Пользователь думает что app просто не реагирует.
+
+Подтверждено через MCP (2026-05-12, recon перед пересозданием TeamQa):
+    Phone +998913030519 был удалён wipe'ом. POST на
+    /api/v1/auth/otp/request возвращал 404 с
+    AUTH_USER_NOT_FOUND. UI не показал ничего.
+
+Рекомендация:
+    Применить тот же fix что в BUG-001 — единая стратегия обработки
+    4xx/5xx с чтением `detail`/`title` из ответа и показом toast.
+    Особый кейс для AUTH_USER_NOT_FOUND: показать дружелюбное
+    сообщение что phone не зарегистрирован в системе (с CTA
+    "обратитесь к администратору вашей организации").
+
+Связь с BUG-001 / BUG-009 (silent failure class).
+
+
+
+
+================================================================================
+BUG-024: Backend 500 INTERNAL_ERROR на business-endpoints вместо понятной
+         доменной ошибки (полная блокировка business flow в Client UI)
+================================================================================
+
+Severity:           Critical (полный downtime business flow + observability)
+Priority:           P0
+Компонент:          Backend (global exception handler / domain validation
+                    layer / system-roles seed)
+Найдено:            2026-05-12 при пересоздании test fixtures после wipe
+
+[STILL PARTIAL 2026-05-19 verified via MCP, login as ADMINISTRATOR
++998905555518 recon tenant] Significant improvement: ВСЕ
+/api/v1/users/* endpoints отвечают 200 при условии что запрос идёт
+с заголовком X-Tenant-Id: <tenantId> (без X-Tenant-Id → 401). UI
+авто-добавляет X-Tenant-Id, поэтому фактически Client UI работает
+для большинства страниц. Старые /api/v1/{roles,me,members,
+positions,departments,categories} (без /users prefix) — всё ещё 500.
+ОСТАВШИЕСЯ 500 на NEW namespace (даже с X-Tenant-Id):
+  - GET /api/v1/edms/routes → 500 INTERNAL_ERROR (видим в UI как
+    "Шаблоны маршрутов не найдены" без error toast → silent fail)
+  - GET /api/v1/integration/1c → 500 INTERNAL_ERROR
+  - GET /api/v1/users/org-positions → 500
+Backend RFC 7807 type-link всё ещё содержит localhost:8080 (см.
+BUG-028). Фронт силент-сwallows 500-ответы для /routes и /integration
+(UI показывает пустое или "не найдены").
+
+[PARTIAL FIX 2026-05-13] Backend сделал API namespace migration на
+`/api/v1/users/*`. Новые endpoints отвечают 200 (system roles seed
+прошёл, 4 системные роли есть). Старые endpoints — всё ещё 500.
+Frontend на новый namespace НЕ обновлён → каждая страница Client UI
+ловит 500 на init-fetch и показывает "Network Error" / пустые
+списки.
+
+Status by endpoint (2026-05-13):
+    OLD URL                         → STATUS    NEW URL (works 200)
+    GET /api/v1/roles               → 500       GET /api/v1/users/roles
+    GET /api/v1/me                  → 500       GET /api/v1/users/me
+    GET /api/v1/users               → 500       GET /api/v1/users/members
+    GET /api/v1/members             → 500       GET /api/v1/users/members
+    GET /api/v1/permissions         → 500       GET /api/v1/users/permissions
+    GET /api/v1/categories          → 500       —     (фича удалена, BUG-010)
+    GET /api/v1/positions           → 500       GET /api/v1/users/positions
+    GET /api/v1/job-titles          → 500       GET /api/v1/users/job-titles
+    GET /api/v1/departments         → 500       GET /api/v1/users/departments
+    GET /api/v1/system-roles        → 500       GET /api/v1/users/roles
+    GET /api/v1/tenants/{id}/roles  → 500       —     (см. /users/roles)
+    GET /api/v1/users/employees     → 500       —     (см. /users/members)
+    GET /api/v1/users/categories    → 500       —     (фича удалена)
+    GET /api/v1/users/branches      → 500       GET /api/v1/branches
+    GET /api/v1/users/users         → 500       —     (см. /users/members)
+    GET /api/v1/integration/1c      → 500       не выяснено (требует UI flow)
+    GET /api/v1/edms/routes         → 500       не выяснено
+    GET /api/v1/edms/templates      → 200       —     (уже работало)
+    GET /api/v1/edms/documents      → 200       —     (уже работало)
+
+Backend RFC 7807 type-link содержит `http://localhost:8080/problems/help.html`
+— см. отдельный BUG-028 (минор, dev hostname leak).
+
+Влияние сейчас (после partial-fix):
+  - Sidebar показывает все группы корректно, но каждая страница
+    которую открывает юзер дёргает старый URL → "Network Error" +
+    пустой content.
+  - /members add-form combobox "Системная роль" пустой т.к.
+    дёргается /roles (500) вместо /users/roles (200) → BUG-026
+    регрессия паттерна.
+  - Невозможно создать invitee'ев (Nukus/Mangit/Shimbay) —
+    blocked by combobox.
+  - Все RBAC sweep'ы заблокированы (нет non-admin user'ов).
+
+Действие сейчас:
+  1. Frontend: docker-build с обновлёнными API endpoints на /users/*
+     namespace + redeploy на dev.
+  2. Backend: рассмотреть alias-роуты (старый URL → новый ответ)
+     до момента когда frontend полностью мигрирует.
+
+Описание:
+    После успешного auth (`/auth/otp/verify` → JWT, login в Client UI
+    как admin TeamQa) ВСЕ business endpoints возвращают:
+        500 Internal Server Error
+        {"detail":"Произошла непредвиденная ошибка. Свяжитесь с администратором.",
+         "code":"INTERNAL_ERROR", "traceId":"..."}
+    Затронуты (verified):
+        GET /api/v1/roles
+        GET /api/v1/system-roles
+        GET /api/v1/users/roles
+        GET /api/v1/tenants/{id}/roles
+        GET /api/v1/users
+        GET /api/v1/members
+        GET /api/v1/me
+        GET /api/v1/permissions
+    Авто-фетчи на этих URL'ах в Client UI приводят к 13-22 console
+    errors при первом открытии любой страницы (/members, /dashboard).
+
+    Эффект на UX:
+      - /members: "Пользователи не найдены" даже когда в БД admin
+        точно есть (verified через `/api/v1/admin/tenants/{id}` →
+        members[] содержит admin'a).
+      - /members → "Добавить сотрудника" → combobox "Системная роль"
+        показывает только "Выберите..." (BUG-026 empty placeholder
+        pattern) — backend 500 на /roles, frontend silent.
+      - Submit диалога без выбранной роли → BUG-001 silent (нет
+        inline-validation, нет toast).
+      - Полностью блокирует пересоздание test-фикстур.
+
+    Подозрение по корневой причине:
+      - Wipe удалил данные tenants/users но не доfинишировал
+        миграции/seed system roles. RoleService при boot не нашёл
+        SystemRole.ADMINISTRATOR/EMPLOYEE/MANAGER/DIRECTOR и
+        кидает NPE из любого endpoint'а который требует разрешение
+        на роль. ИЛИ
+      - Permission resolver upstream упал и стек завернулся в
+        generic 500 вместо доменного ответа (TENANT_REQUIRED /
+        ROLES_NOT_SEEDED / etc.).
+
+Backend ожидание (доменно правильно):
+    - Если tenant context отсутствует → 400 TENANT_REQUIRED или 403.
+    - Если seed system roles отсутствует → 503 SYSTEM_ROLES_NOT_READY
+      или похожий доменный код.
+    - НИКОГДА не отдавать generic 500 — это маскирует реальные
+      ошибки и ломает retry-логику клиентов.
+
+Шаги воспроизведения:
+    1. Залогиниться в Client UI (любая роль, любой tenant).
+    2. Из browser devtools или curl: GET /api/v1/roles с Bearer JWT.
+    3. Получить 500 с traceId, но без сути ошибки.
+
+Ожидаемый результат:
+    4xx с конкретным `code` (TENANT_REQUIRED / SYSTEM_ROLES_NOT_READY /
+    PERMISSION_DENIED / etc.) или 200 с реальными данными.
+
+Фактический результат:
+    500 на ВСЕХ business endpoints. UI показывает пустые списки
+    или silent-fail без каких-либо сообщений.
+
+Подтверждено через MCP (2026-05-12, login as +998913030519 admin TeamQa):
+    Tenant создан успешно через /admin/tenants (Admin UI flow),
+    но любая попытка обратиться к business endpoint от лица admin'a
+    этого tenant'а возвращает 500. Прямой fetch с Bearer JWT
+    подтверждает поведение.
+
+Рекомендация:
+    1. Backend: пересмотреть GlobalExceptionHandler — все
+       NoSuchElementException / NullPointerException / IllegalState
+       должны мапиться в конкретные коды или хотя бы в 4xx для
+       нагрузочного debug.
+    2. Backend: добавить health-check endpoint `/health/seed` который
+       проверяет что system roles прописаны в БД.
+    3. DevOps: после wipe запускать `flyway migrate` или эквивалент
+       для гарантированного seed system roles.
+    4. Frontend: на 500 показывать toast "Сервис временно недоступен,
+       traceId: ..." а не silent (BUG-001 family).
+
+Связь с BUG-001 / BUG-026 / BUG-019 (silent failure + empty combobox classes).
+БЛОКИРУЕТ: пересоздание тест-фикстур (Nukus/Mangit/Shimbay не созданы),
+verification BUG-022 (sign flow), любые E2E тесты до фикса.
+
+
+
+
+================================================================================
+BUG-025: API auth-shape изменился — `/auth/otp/verify` возвращает
+         permissions-объект wildcard-формата `{"*":{"*":["manage"]}}`
+================================================================================
+
+Severity:           Info (changed contract / docs drift)
+Priority:           P3
+Компонент:          Backend API contract + любая POM/тесты которые
+                    парсят response auth/otp/verify
+Найдено:            2026-05-12 при пересоздании test fixtures
+
+[STILL VALID 2026-05-19 verified via MCP, login as ADMINISTRATOR
++998905555518] localStorage `client-permissions` = `{"*":{"*":["manage"]}}`
+для Admin. Для EMPLOYEE (+998906145041) shape тот же, но с конкретными
+правами: `{"edms":{"inbox":["view"],"documents":["view","create"]},
+"hrms":{"leave":["view"],"payroll":["view"],"attendance":["view"]}}`.
+Wildcard-формат закреплён, новые HRMS-правила добавлены (Кадры:
+Посещаемость/Отпуска/Зарплата). Это info-level — не баг продукта,
+а design decision.
+
+Описание:
+    Это НЕ баг продукта, а сигнал — формат permissions в response
+    /api/v1/auth/otp/verify (и похожих auth endpoint'ах) изменился.
+
+    До (предполагалось): плоский список permissions
+        {"permissions": ["edms.documents.view", "edms.documents.create", ...]}
+
+    Сейчас (verified в localStorage `client-permissions` и
+    `client-current-tenant`):
+        {
+          "token": "...",
+          "tenants": [{
+            "id": "874880be-...",
+            "name": "TeamQa",
+            "role": "ADMINISTRATOR",
+            "permissions": { "*": { "*": ["manage"] } }
+          }]
+        }
+
+    Формат: `{<resource>: {<action>: [<scope1>, <scope2>, ...]}}`
+    где `*` — wildcard. Для admin'а — `*:*:manage` (на всё).
+
+Влияние:
+    - Любая POM Client UI которая полагается на старый flat-list
+      shape — сломается на parse.
+    - Текущие наши POM (`pages/client/login_page.py`,
+      `pages/client/select_organization_page.py`,
+      `pages/client/otp_page.py`) работают через UI взаимодействие
+      (а не парсят response напрямую) — скорее всего НЕ затронуты.
+    - Тесты которые делают assertion над permissions через
+      JS-evaluate → должны быть обновлены.
+    - Существующие тесты в tests/ нужно обыскать на упоминания
+      "permissions" + сравнение с list.
+
+Действие:
+    1. Pin изменение в memory как known shape.
+    2. Перед написанием новых тестов под RBAC — использовать новый
+      wildcard shape.
+    3. Проверить tests/client/test_rbac.py и tests/regression/
+       test_role_refactor.py что они не сломаются.
+
+Подтверждено через MCP (2026-05-12, login as +998913030519 admin TeamQa):
+    После /auth/otp/verify в localStorage:
+      `client-permissions` = `{"*":{"*":["manage"]}}`
+      `client-current-tenant.permissions` = идентично.
+
+Рекомендация:
+    Документировать новый shape в `docs/api/auth.md` (если такой
+    есть, иначе создать). Либо оставить как-есть (Info-level), но
+    проверить что POM/тесты не делают assumption про старый shape.
+
+
+
+
+================================================================================
+BUG-026: Tenant-select endpoint исчез или переименован — все попытки
+         старых URL → 500
+================================================================================
+
+Severity:           Minor (REST blackbox недоступен; UI flow работает)
+Priority:           P3
+Компонент:          Backend API contract / docs
+Найдено:            2026-05-12 при пересоздании test fixtures
+
+[FIXED 2026-05-19 verified via MCP, login as ADMINISTRATOR
++998905555518 recon tenant] Системная роль combobox в /members → Add
+Employee теперь содержит 5 опций: "Выберите...", E2EROLECZKGBO (custom),
+Сотрудник, Менеджер, Директор, Администратор. Empty-combobox-pattern
+исчез благодаря BUG-024 namespace fix (/api/v1/users/roles → 200).
+Tenant-select REST endpoint blackbox остаётся неизвестен (нет multi-
+tenant user'а на dev), но это часть main bug body — UI flow работает,
+combobox-class паттерн закрыт.
+
+[STILL BROKEN 2026-05-13] паттерн "пустой combobox от 500-endpoint"
+verified в новом контексте: /members → Add Employee → combobox
+"Системная роль" имеет ровно одну опцию `{text:"Выберите...", value:""}`,
+потому что frontend дёргает старый /api/v1/roles → 500 (вместо нового
+/api/v1/users/roles → 200). Это та же root cause что BUG-024 partial-fix —
+frontend не докачен под namespace migration. См. BUG-024 [PARTIAL FIX
+2026-05-13] table.
+
+Описание:
+    Раньше для multi-tenant логина был отдельный endpoint выбора
+    tenant'а после OTP verify (tenant-select step). Сейчас все
+    попытки старых URL дают 500 (тот же BUG-024 generic-500 pattern):
+
+        POST /api/v1/auth/tenant/select        → 500
+        POST /api/v1/auth/switch-tenant        → 500
+        POST /api/v1/auth/select-tenant        → 500
+        POST /api/v1/auth/tenant               → 500
+        POST /api/v1/auth/tenants/select       → 500
+
+    Возможные интерпретации:
+      a. Endpoint удалён — tenant теперь выбирается через query-param
+         или header при следующем business request (X-Tenant-Id).
+      b. Endpoint переименован в неизвестный URL.
+      c. Проявление BUG-024 — backend в полном down'е и любой POST
+         даёт 500.
+
+    Текущее поведение Client UI (single-tenant случай):
+      После OTP verify юзер с одной membership редиректится сразу
+      на /documents без /tenant-select шага. Проверки из много-
+      tenant сценария выяснить нельзя — у нас сейчас нет user'a
+      с 2+ membership'ами.
+
+Действие:
+    Дождаться фикса BUG-024 (backend поднимется) → провести разведку
+    через UI на multi-tenant юзере: открыть DevTools → Network →
+    выбрать tenant в /tenant-select → посмотреть точный URL и payload.
+    После этого либо переоткрыть BUG-026 как documented, либо закрыть.
+
+Severity rationale:
+    Minor — UI flow работает (single-tenant юзеры redirect автоматом),
+    но REST blackbox-тесты недоступны до выяснения.
+
+Подтверждено через MCP (2026-05-12):
+    5 candidate URL'ов попробованы — все 500 (см. выше).
+
+Связь с BUG-024 (общий 500 INTERNAL_ERROR pattern). Возможно BUG-026
+автоматически разрешится после фикса BUG-024.
+
+
+
+
+================================================================================
+BUG-027: Закэшированный `runtime/env.js` с broken API_URL — реальные
+         юзеры не могут залогиниться, fetch уходит на localhost
+================================================================================
+
+Severity:           Major (prod-impact на реальных юзеров)
+Priority:           P1
+Компонент:          Frontend deployment / static asset cache headers
+Найдено:            2026-05-12 (репортёр — пользователь, Yandex Browser)
+                    Также наблюдалось агентом MCP в той же сессии (записано
+                    как infra, но теперь подтверждено на реальном браузере
+                    реального юзера → продуктовый баг).
+
+[FIXED 2026-05-19 verified via MCP] Оба UI (Admin + Client):
+  - `/runtime/env.js` HTTP 200 с Cache-Control: "no-store, no-cache,
+    must-revalidate, proxy-revalidate" + Pragma: "no-cache" ✅
+  - Body: `window.__ENV__ = { API_URL: "https://dev-hub-api.greatmall.uz" ... }` ✅
+  - В runtime `window.__ENV__.API_URL` = "https://dev-hub-api.greatmall.uz" ✅
+HTML загружает 2 script'а: `/env.js` (LOCAL DEV stub с API_URL:"") +
+`/runtime/env.js` (правильный) — runtime/env.js загружается ВТОРЫМ и
+перезаписывает, поэтому финальное значение корректно. Минорная
+гигиена: /env.js dev-stub не должен deploy'иться, но не блокирует.
+Real users в Yandex Browser должны теперь получать актуальный
+runtime/env.js при каждом запросе (cache headers корректные).
+
+[STILL BROKEN 2026-05-13] verified `window.__ENV__.API_URL = ""` на обоих
+UI (Admin + Client) после frontend redeploy. Login работает только
+благодаря какому-то fallback на same-origin (видимо frontend делает
+relative-fetch когда baseURL пустой, и Vite/nginx прокидывает в правильный
+backend). Реальные юзеры в Yandex с закэшированной старой версией всё
+ещё страдают. Cache-Control / cache-bust hash не добавлены.
+
+Описание:
+    Файл `https://dev-hub-{admin,client}.greatmall.uz/runtime/env.js`
+    в какой-то момент был задеплоен с broken/empty `API_URL`
+    (либо `""`, либо `http://localhost:8040` — типичное dev-default
+    значение, попавшее в продакшн билд).
+
+    Браузер закэшировал этот файл "навсегда" — сервер либо не шлёт
+    `Cache-Control: no-store`, либо браузер игнорирует его для JS
+    (known Chromium/Yandex behavior с heuristic caching). После того
+    как backend починили и runtime/env.js теперь отдаёт правильный
+    `https://dev-hub-api.greatmall.uz`, юзеры с закэшированной старой
+    версией продолжают получать broken URL.
+
+    Симптом:
+      - Юзер открывает Admin UI / Client UI
+      - Login форма отображается нормально
+      - При submit fetch идёт на `http://localhost:8040/...`
+        → ERR_CONNECTION_REFUSED → silent fail (см. также BUG-001)
+      - В incognito или другом браузере (без кэша) — login работает
+
+    Воспроизведение:
+      Yandex Browser, обычное окно, открыт `dev-hub-admin.greatmall.uz`
+      с какого-то момента в прошлом → не работает. В incognito того же
+      Yandex'а или в другом браузере (Chrome/Safari) — работает.
+
+Workaround для пользователя (3 способа):
+
+    1. DevTools Clear site data (надёжнее всего):
+       - F12 → Application → Storage → Clear site data
+       - Отметить: Cookies, Local/session storage, Cache storage,
+         Service workers
+       - Закрыть вкладку, открыть заново
+
+    2. Hard reload:
+       - F12 (DevTools должен быть открыт)
+       - Правый клик на reload → "Очистить кэш и выполнить полную
+         перезагрузку"
+
+    3. Через настройки Yandex:
+       - browser://settings/siteData?searchSubpage=greatmall
+       - Удалить записи для dev-hub-admin / dev-hub-client / dev-hub-api
+
+Действие со стороны команды (root cause):
+
+    a) `Cache-Control: no-store, max-age=0` на `runtime/env.js`
+       (и проверить что nginx/CDN это уважает — Cloudflare/прочие
+       прокси могут override).
+
+    b) Cache-bust hash в URL: `/runtime/env.<hash>.js`. Тогда смена
+       конфига = смена URL = принудительный fresh fetch.
+
+    c) Проверить что нет Service Worker'а который кэширует этот файл
+       (DevTools → Application → Service Workers — должно быть пусто
+       или явно whitelistить только app shell).
+
+    d) Никогда не деплоить билд с локальным/пустым API_URL на dev/prod.
+       Build pipeline должен fail'ить если `API_URL === '' ||
+       API_URL.includes('localhost')` для не-local target'ов.
+
+После фикса добавить regression-тест:
+    - HEAD-запрос на `/runtime/env.js` → проверить заголовок
+      `Cache-Control` содержит `no-store` или `max-age=0`
+    - GET → проверить что `API_URL` matchится regex
+      `^https://[^/]+\\.greatmall\\.uz$` для dev/prod
+
+Связь:
+    - BUG-001 (silent fail на 4xx) — без него юзер хотя бы видел бы
+      ERR_CONNECTION_REFUSED toast и понимал в чём проблема.
+    - BUG-NEW-A (агентский recon 2026-05-12) — был помечен как
+      MCP-infra, но теперь reclassified как продуктовый prod-impact
+      под этим номером.
+
+
+
+================================================================================
+BUG-028: Backend RFC 7807 type-link содержит localhost:8080 — leaks dev
+         hostname в production-shaped error response
+================================================================================
+
+Severity:           Minor (information leak / cosmetic)
+Priority:           P3
+Компонент:          Backend (GlobalExceptionHandler / ErrorResponse builder)
+Найдено:            2026-05-13 при sweep после backend partial-fix BUG-024
+
+[STILL BROKEN 2026-05-19 verified via MCP] Все 500-ответы которые
+сегодня видел (5+ different endpoints) содержат
+`"type":"http://localhost:8080/problems/help.html#INTERNAL_ERROR"` или
+`"type":"http://localhost:8080/problems/help.html#400"` в RFC 7807
+body. Примеры: /api/v1/edms/routes, /api/v1/integration/1c,
+/api/v1/users/org-positions, /api/v1/integration/1c/employees (на
+400 deserialization). Fix не применён.
+
+Описание:
+    Любой 500-ответ на `/api/v1/*` содержит RFC 7807 metadata где
+    поле `type` указывает на абсолютный URL c hard-coded localhost:
+
+        {
+          "type": "http://localhost:8080/problems/help.html#INTERNAL_ERROR",
+          "title": "Internal Server Error",
+          "status": 500,
+          ...
+        }
+
+    Это:
+      - Leaks dev/local hostname в response body для любого юзера.
+      - Если бэк деплоится на production как-есть — production-юзеры
+        тоже увидят "localhost:8080" в DevTools (cosmetic, но
+        непрофессионально и может дать инсайт атакующему).
+      - Type-link не разрешим (никакого `/problems/help.html` на
+        деве не хостится).
+
+Шаги воспроизведения:
+    curl -s -H "Authorization: Bearer <jwt>" \\
+         https://dev-hub-api.greatmall.uz/api/v1/roles | jq .type
+    → "http://localhost:8080/problems/help.html#INTERNAL_ERROR"
+
+Ожидаемое:
+    Либо canonical https-URL на доку проекта, либо опустить поле
+    type вовсе (RFC 7807 разрешает).
+
+Рекомендация:
+    1. Backend: вынести `errorTypeBaseUrl` в application.yaml
+       (default `about:blank` для dev, конкретный URL для prod).
+    2. Если планируется страница help.html — захостить её на
+       dev-hub-api.greatmall.uz/problems/help.html.
+
+Severity rationale:
+    Minor — не security-issue (не утечка PII / credentials), но
+    некрасиво и заметно для юзеров с открытым DevTools. Не блокирует
+    flow.
+
+Подтверждено через MCP (2026-05-13) — все 500-ответы на старых URL'ах
+содержат этот localhost-link.
+
+
+
+================================================================================
+BUG-029: Super Admin login сломан после wipe — пароль `admin123` не работает
+================================================================================
+
+Severity:           Major (блокирует все Admin UI E2E тесты + tenant management)
+Priority:           P1
+Компонент:          Backend Admin auth / DevOps (post-wipe seed)
+Найдено:            2026-05-13 при sweep после backend partial-fix BUG-024
+
+[STILL BROKEN 2026-05-19 verified via MCP] Admin UI /login → phone
+"+998991234567" + password "admin123" → 401 + inline error
+"Неверный телефон или пароль". Прямой POST на
+/api/v1/admin/auth/login с дополнительными candidates:
+admin12345, Admin12345!, admin, password1, Admin2026!, admin2026 —
+все 401 ADMIN_AUTH_INVALID_CREDENTIALS. Всего 17+6=23 пароля
+проверено за две сессии — ни один не подошёл. Креды от dev-team
+всё ещё нужны.
+
+Workaround для testing: использовать Client UI OTP login как Super
+Admin (+998991234567 + OTP=123456 → ACTIVE+PLATFORM_ADMIN role, но
+без tenants[] → /tenant-select показывает empty state "Организация
+не найдена"). Admin UI остаётся недоступен.
+
+Описание:
+    Super Admin login `+998991234567` / `admin123` (запомненные креды
+    с 2026-05-07, см. memory/test_fixtures.md) → "Неверный телефон
+    или пароль". Либо креды ротированы намеренно, либо seed Super
+    Admin'а после wipe не отработал и admin теперь имеет другой
+    пароль.
+
+    Эффект:
+      - Невозможно открыть Admin UI dashboard
+      - Невозможно создать новые tenants через UI
+      - Все E2E которые зависят от storage_state SUPER_ADMIN —
+        падают на первом же логине
+      - Невозможно проверить status Admin UI flow багов
+        (BUG-001 silent 4xx и др.)
+
+Шаги воспроизведения:
+    1. https://dev-hub-admin.greatmall.uz/login
+    2. Phone: +998991234567, Password: admin123
+    3. → "Неверный телефон или пароль"
+
+Ожидаемый результат:
+    Login успешный → /dashboard.
+
+Фактический результат:
+    Auth-error inline.
+
+Рекомендация:
+    1. DevOps: подтвердить что Super Admin seed отрабатывает
+       после wipe и зафиксировать креды (не менять без
+       уведомления QA).
+    2. Команда: сообщить новый пароль если намеренно ротирован.
+    3. QA: добавить в data/constants.py + memory/test_fixtures.md
+       новый пароль когда станет известен.
+
+Подтверждено через MCP (2026-05-13).
+
+Связь с BUG-024 (post-wipe seed issues family).
+
+
+
+================================================================================
+BUG-030: Backend RBAC leak — EMPLOYEE может получить /users/members и
+         /users/roles через прямой API call (нарушение privilege separation)
+================================================================================
+
+Severity:           Critical (security / privilege escalation)
+Priority:           P0
+Компонент:          Backend (PermissionService / ACL middleware)
+Найдено:            2026-05-19 при MCP sweep всех 29 багов
+
+Описание:
+    Frontend route-guard корректно редиректит EMPLOYEE на /forbidden
+    при попытке открыть /members, /roles и др. admin-страницы (см.
+    BUG-002 [PARTIAL FIXED]). Но backend ACL **не реализован** — тот
+    же EMPLOYEE может через прямой XHR/curl с собственным Bearer JWT
+    получить полный объём защищённых данных:
+
+        GET /api/v1/users/members → 200
+        Response: [{phone, firstName, lastName, role, ...}, ...]
+        — полный список всех сотрудников tenant'а с phone/именами/ролями.
+
+        GET /api/v1/users/roles → 200
+        Response: [{name, permissions:[...]}, ...]
+        — полный permissions tree (58/58 permissions для каждой системной
+        роли) включая внутренние perm-имена.
+
+    Это нарушает privilege separation — EMPLOYEE должен видеть только
+    свой профиль и публичные данные.
+
+Класс уязвимости:
+    Тот же что BUG-006 (Director видел /integration с ключом 1С):
+    front-route-guard работает, backend-ACL отсутствует.
+
+Шаги воспроизведения:
+    1. Залогиниться в Client UI как EMPLOYEE (через OTP).
+    2. DevTools → Network → скопировать Bearer JWT из любого запроса.
+    3. curl -H "Authorization: Bearer <jwt>" \
+            -H "X-Tenant-Id: <tenant_uuid>" \
+            https://dev-hub-api.greatmall.uz/api/v1/users/members
+    4. Получить полный member list (должно быть 403 FORBIDDEN или
+       фильтрованный набор).
+
+Ожидаемый результат:
+    403 FORBIDDEN либо response отфильтрован до user's own data
+    (только текущий юзер + publicly-visible поля коллег).
+
+Фактический результат:
+    200 OK с полным набором данных.
+
+Импакт:
+    - Любой EMPLOYEE может выгрузить весь staff directory tenant'а
+      (phone numbers, full names, system roles) и весь permission
+      model системы.
+    - При наличии ИНН/PINFL у employee — может скрейпить admin
+      контакты для социальной инженерии.
+    - Roadmap утечки: добавление endpoint'ов для документов / шаблонов /
+      маршрутов вернёт ту же дыру если backend не введёт ACL сейчас.
+
+Рекомендация:
+    1. Backend: PermissionService должен проверять JWT.role против
+       endpoint-required permission для каждого /api/v1/users/* и
+       /api/v1/edms/* endpoint'а. Все endpoints должны быть
+       deny-by-default, allow-list через @PreAuthorize/middleware.
+    2. Backend: response shape должен фильтроваться по permission —
+       EMPLOYEE GET /users/members → только текущий юзер или
+       публичный subset.
+    3. QA: после фикса добавить regression-suite которая для каждой
+       admin-only API делает запрос от EMPLOYEE и ассертит 403.
+
+Связь:
+    - BUG-002 (PARTIAL FIXED) — sidebar+frontend закрыты, бэк нет.
+    - BUG-006 (Director leaks /integration) — тот же класс.
+    - BUG-009 (Сотрудник видит /branches) — тот же класс.
+
+Подтверждено через MCP (2026-05-19).
+
+
+
+================================================================================
+BUG-031: /api/v1/integration/1c → 500 INTERNAL_ERROR даже для ADMIN —
+         /integration страница пустая, silent fail
+================================================================================
+
+Severity:           Major (блокирует Mock 1C интеграцию + observability)
+Priority:           P1
+Компонент:          Backend (1C integration controller) + Frontend (Client UI
+                    error handling — silent fail, см. BUG-001 family)
+Найдено:            2026-05-19 при MCP sweep
+
+Описание:
+    Открытие /integration в Client UI под Admin TeamQa приводит к:
+        GET /api/v1/integration/1c → 500 INTERNAL_ERROR
+        {"type":"http://localhost:8080/problems/help.html#INTERNAL_ERROR",
+         "detail":"Произошла непредвиденная ошибка...",
+         "code":"INTERNAL_ERROR", "traceId":"..."}
+
+    Frontend ловит 500 но не показывает error-toast — страница
+    отрисовывает пустые карточки 3 интеграций (1C/Bitrix24/Налоговая),
+    модал "1C Не подключено" не содержит integration_key.
+
+    Это блокирует:
+      - просмотр текущего ключа интеграции 1C
+      - смену/ротацию ключа через UI
+      - Mock 1C connection flow (нечего вставлять в Mock 1C форму)
+
+Класс silent-failure (см. BUG-001 family) — error happens but no
+UX-signal.
+
+Шаги воспроизведения:
+    1. Login Client UI как Admin (+998991234567, OTP 123456,
+       выбрать tenant).
+    2. Sidebar → "Интеграция".
+    3. DevTools → Network → видим 500 на /integration/1c.
+    4. UI показывает пустые карточки без error.
+
+Ожидаемый результат:
+    Либо 200 с реальным integration data, либо явный error-toast
+    "Сервис временно недоступен, traceId: X" если бэк действительно
+    лежит.
+
+Фактический результат:
+    500 + silent UI.
+
+Связь:
+    - BUG-024 (Partial FIX) — паттерн "endpoint всё ещё 500 после
+      namespace migration", /integration/1c не мигрирован.
+    - BUG-001 (silent fail) — frontend не показывает 500-toast.
+
+Подтверждено через MCP (2026-05-19).
+
+
+
+================================================================================
+BUG-032: /edms/routes → 500 silent — UI показывает "Шаблоны маршрутов
+         не найдены" вместо error toast
+================================================================================
+
+Severity:           Major (silent-failure + блокирует Routes management)
+Priority:           P1
+Компонент:          Backend (routes controller) + Frontend (silent fail)
+Найдено:            2026-05-19 при MCP sweep
+
+Описание:
+    Открытие /routes в Client UI:
+        GET /api/v1/edms/routes → 500 INTERNAL_ERROR
+        Same shape as BUG-031.
+
+    Frontend интерпретирует ошибку как "нет данных" и показывает
+    empty-state: "Шаблоны маршрутов не найдены". Юзер думает что
+    шаблонов просто нет в системе, тогда как на самом деле endpoint
+    лежит.
+
+    Это блокирует:
+      - просмотр существующих маршрутов
+      - создание/редактирование маршрутов (UI выглядит как fresh state)
+      - всю route-management часть BRD §3.5b
+
+Класс silent-failure + observability gap.
+
+Шаги воспроизведения:
+    1. Login Client UI как Admin.
+    2. Sidebar → "Маршруты".
+    3. DevTools → Network → 500 на /edms/routes.
+    4. UI показывает "Шаблоны маршрутов не найдены".
+
+Ожидаемый результат:
+    Либо 200 с реальными routes, либо error-toast "Не удалось
+    загрузить маршруты, попробуйте позже".
+
+Фактический результат:
+    500 от бэка + empty-state UI (silently mistreated as "no data").
+
+Связь:
+    - BUG-024 (Partial FIX) — endpoint всё ещё 500 после migration.
+    - BUG-001 (silent fail) — empty-state вместо error.
+    - BUG-019 (combobox пустой при 500) — тот же паттерн.
+
+Подтверждено через MCP (2026-05-19).
+
+
+
+================================================================================
+BUG-033: Mock 1C "Отправлено" UI-status lies — column всегда показывает
+         success независимо от backend response (регрессия от 2026-05-04)
+================================================================================
+
+Severity:           Major (UI integrity / debugging-blocker)
+Priority:           P2
+Компонент:          Mock 1C UI (employees/positions/departments push status
+                    column)
+Найдено:            2026-05-19 при MCP sweep (регрессия от 2026-05-04
+                    — баг уже наблюдался при первой recon-сессии и должен
+                    был быть исправлен)
+
+Описание:
+    В Mock 1C UI (https://dev-mock-1c.greatmall.uz) на странице
+    "Сотрудники" → кнопка "Отправить все" отправляет 6 employees через
+    POST /employees к backend. Backend возвращает 207 Multi-Status с
+    failed=N для записей которые не прошли (JOB_TITLE_NOT_FOUND /
+    PERSON_NOT_FOUND / etc.).
+
+    UI status-column **всегда показывает "Отправлено"** для всех 6
+    строк, даже когда backend явно сказал что N из них не прошли.
+    На реальной стороне (Client UI /members) — этих сотрудников нет.
+
+    Это то же поведение что наблюдалось 2026-05-04 при первой
+    recon-сессии и было залогировано как часть BUG-003. Сейчас
+    выделяется как отдельный баг т.к. Mock 1C UI — отдельный
+    компонент со своей логикой.
+
+Класс UI integrity violation + observability gap.
+
+Шаги воспроизведения:
+    1. Открыть Mock 1C, подключиться к tenant'у (использовать
+       integration_key админа).
+    2. Перейти на /employees, создать или импортировать 5-10 mock-
+       сотрудников.
+    3. Нажать "Отправить все".
+    4. Status-column показывает "Отправлено" для всех.
+    5. Открыть Client UI /members → этих сотрудников нет.
+    6. DevTools → Network в Mock 1C → POST /employees → 207 с failed=N.
+
+Ожидаемый результат:
+    Status-column отражает реальный per-record статус из backend
+    response (Отправлено / Ошибка: <reason> / Skipped).
+
+Фактический результат:
+    Universal "Отправлено" lie.
+
+Связь:
+    - BUG-003 (Mock 1C push не работает) — старший родственник.
+    - BUG-001 / BUG-031 / BUG-032 — silent-failure family.
+
+Рекомендация:
+    1. Mock 1C UI: парсить 207 response, маппить per-record status
+       (id → success/failed/reason) на UI колонку.
+    2. Mock 1C UI: добавить summary-toast "N из M успешно отправлены"
+       после bulk-операции.
+
+Подтверждено через MCP (2026-05-19).
+
+
+
+================================================================================
+BUG-034: /env.js dev-stub всё ещё деплоится на оба UI (BUG-027 partial-fix
+         tail — Cache-Control починили, но stub не убрали)
+================================================================================
+
+Severity:           Minor (BUG-027 был помечен FIXED, но половина проблемы
+                    осталась)
+Priority:           P3
+Компонент:          Frontend deployment (build pipeline / nginx config)
+Найдено:            2026-05-19 при MCP sweep — BUG-027 re-verification
+
+Описание:
+    BUG-027 [FIXED 2026-05-19] (cache headers) — корректно добавлен
+    `Cache-Control: no-store` на `/runtime/env.js`. Но dev-стенд
+    одновременно деплоит **двe конкурирующие env-конфигурации**:
+
+        /env.js          → window.__ENV__ = { API_URL: "" }
+        /runtime/env.js  → window.__ENV__ = { API_URL: "https://dev-hub-api..." }
+
+    HTML index.html подключает оба:
+        <script src="/env.js"></script>
+        <script src="/runtime/env.js"></script>
+
+    Сейчас работает только потому что runtime/env.js загружается
+    вторым и перезаписывает первое. Но:
+      - Если порядок script-tag'ов случайно сменится — broken state.
+      - Если /runtime/env.js закэшируется в браузере (Cache-Control
+        пока что no-store, но это можно регрессировать) — снова
+        broken state.
+      - В DevTools видно "лишний" 200 с подозрительным `API_URL:""`,
+        что может смутить debugging.
+
+    BUG-027 формально FIXED (login работает, cache headers правильные),
+    но root cause (dev-stub env.js) остался. Новый bug под минорный
+    cleanup.
+
+Шаги воспроизведения:
+    1. Открыть https://dev-hub-client.greatmall.uz/
+    2. DevTools → Network → фильтр env.js
+    3. Видны два запроса:
+       - GET /env.js → 200, body содержит `window.__ENV__ = {API_URL: ""}`
+       - GET /runtime/env.js → 200, body содержит правильный API_URL.
+
+Ожидаемое:
+    На dev-стенде должен быть только один источник env-конфига
+    (либо `/env.js`, либо `/runtime/env.js`). Stub удалить.
+
+Фактическое:
+    Два конкурирующих файла. Работает по счастливой случайности
+    порядка загрузки.
+
+Рекомендация:
+    1. Frontend build: исключить /env.js stub из dev/prod-сборки
+       (оставить только для local-dev режима где runtime/env.js
+       не генерируется).
+    2. nginx config: 410 GONE для /env.js если runtime/env.js
+       присутствует.
+    3. Build pipeline: fail-build if API_URL пустой в /env.js при
+       deploy на не-local target.
+
+Связь:
+    - BUG-027 (FIXED but tail issue) — это complement bug.
+
+Подтверждено через MCP (2026-05-19).
+
+
+
+================================================================================
+Сводка
+================================================================================
+
+BUG-001  Major     [STILL BROKEN 2026-05-19] Фронт молча игнорирует 4xx
+                   (Add Employee → 400 CONSTRAINT_VIOLATION на roleId=null,
+                   dialog не закрылся, ни toast). Класс silent-failure
+                   подтверждён и в Client UI /members.
+BUG-002  Critical  [PARTIAL FIXED 2026-05-19] Frontend route-guard добавлен
+                   на /integration /roles /members /organization /positions
+                   /departments /org-positions /categories /persons /templates
+                   /routes — все redirect Employee на /forbidden. Дыра: /branches.
+                   Backend leak остался: /api/v1/users/members и /users/roles
+                   → 200 для EMPLOYEE.
+BUG-003  Major     [STILL BROKEN 2026-05-19] Mock 1C → /employees "Отправить
+                   все" 6 строк → UI status="Отправлено", в /members 0 новых.
+                   Silent-UI-lie pattern + push не работает.
+                   [NOT FIXED 2026-05-06] Mock 1C "Отправить все" сотрудников →
+                   /employees возвращает 207 failed=1 (JOB_TITLE_NOT_FOUND /
+                   PERSON_NOT_FOUND); в /members сотрудники не появляются.
+BUG-004  Major     [BLOCKED 2026-05-19] Нет активного Director-юзера на dev.
+                   [2026-05-04] Director может редактировать /org-positions —
+                   тот же класс что BUG-005 (sidebar/permission leak frontend).
+BUG-005  Critical  [BLOCKED 2026-05-19] Нет активного Director-юзера на dev.
+                   [2026-05-04] Director видит "Филиалы" в sidebar — нарушение
+                   permission. Менее критично чем BUG-006, но тот же класс.
+BUG-006  Critical  [BLOCKED 2026-05-19] Нет активного Director-юзера на dev.
+                   [2026-05-04] Director видит /integration с ключом 1С +
+                   /roles в Settings. Утечка ключа интеграции — security.
+                   Класс RBAC-bypass: фронт-route-guard и backend-permission
+                   не реализованы.
+BUG-007  Major     [BLOCKED 2026-05-19] Нет активного Manager-юзера на dev.
+                   [2026-05-04] Менеджер видит "Интеграция" — должно быть
+                   скрыто. Класс BUG-006.
+BUG-008  Major     [BLOCKED 2026-05-19] Нет активного Manager-юзера на dev.
+                   [2026-05-04] Менеджер может редактировать Филиалы —
+                   должен быть read-only (manage docs/templates/routes,
+                   не org-структура).
+BUG-009  Major     [PARTIAL FIXED 2026-05-19] Sidebar Employee = только Мой
+                   кабинет + Требуют подписи + Исходящие документы. /integration,
+                   /roles, /members, /persons, /organization, /templates, /routes,
+                   /categories, /positions, /departments, /org-positions →
+                   /forbidden. Остаётся ОДНА дыра: /branches рендерит alert
+                   "Не удалось загрузить филиалы" (backend 403, no data leak).
+                   Severity: Critical → Minor (cosmetic).
+BUG-010  Minor     [OBSOLETE 2026-05-19] Фича "Категории" ВЕРНУЛАСЬ как
+                   полноценный раздел (/categories страница + sidebar item +
+                   16/16 permissions в роли Администратор включая Категории).
+                   Не dead UI.
+BUG-011  Major     [FIXED 2026-05-19] Роль Администратор показывает 58/58.
+                   /roles list: Сотрудник 5/58, Менеджер 24/58, Директор 9/58,
+                   Администратор 58/58. Новые группы Финансы + расширенные
+                   Кадры/Настройки.
+BUG-012  Minor     [OBSOLETE 2026-05-19] CreateDocumentPage переработан.
+                   Нет отдельного "Заголовок" поля. Вид документа prefilled
+                   названием шаблона, дубликации нет.
+BUG-013  Major     [BLOCKED 2026-05-19] Repro требует template с PDF-файлом,
+                   создание выходит за scope (не успел по времени).
+BUG-014  Major     [FIXED 2026-05-19] Route Builder edit-step panel содержит
+                   "Отмена" + "Сохранить" + "Удалить шаг". Explicit confirm/
+                   cancel UX, не silent-save.
+BUG-015  Major     [OBSOLETE 2026-05-19] Sidebar полностью переработан
+                   (Мой кабинет, Администрирование→{Компания,Пользователи,
+                   Настройки}). Оригинальная жалоба "нет вкладки" неактуальна.
+BUG-016  Major     [BLOCKED 2026-05-19] Нет активных workflow на recon-tenant
+                   (0 routes). Repro требует multi-user setup.
+BUG-017  Critical  [BLOCKED 2026-05-19] Нет активных workflow на recon-tenant.
+                   /edms/routes endpoint всё ещё 500. Требуется отдельная
+                   multi-actor E2E задача.
+BUG-018  Major     [BLOCKED 2026-05-19] Repro требует workflow с return-to-
+                   rework action. Без routes/workflow verification невозможен.
+                   ПРИМ: BUG-018 (Admin disable self) из memory FIXED уже —
+                   не путать с этим BUG-018 (status enum).
+BUG-019  Major     [OBSOLETE 2026-05-19] CreateDocumentPage redesign убрал
+                   "Документ из системы" combobox полностью. ПРИМ: BUG-019
+                   (fresh tenant seed positions) из memory FIXED — recon-tenant
+                   0 positions/departments — re-confirmed today.
+BUG-020  Minor     [STILL BROKEN 2026-05-19] Add Employee dialog phone input
+                   placeholder "+998911111111" БЕЗ locked prefix. Backend
+                   сохраняет как "998906145041" (без +). Inconsistency
+                   сохранена.
+                   [STILL BROKEN 2026-05-13 verified — после Add Employee
+                   redesign phone-поле всё ещё ждёт +998 ручным вводом].
+BUG-021  Major     [OBSOLETE 2026-05-19] DocumentDetailPage переработан —
+                   нет больше "большой left-area для preview". Текущий
+                   layout: dropzone + form, тот же что create-doc. Original
+                   baseline не соответствует.
+BUG-022  Critical  [BLOCKED 2026-05-19] Требует физическую ЭЦП-флешку
+                   (eimzo_local_only). Без hardware repro невозможен.
+                   EIMZO_DOMAIN_KEYS в runtime/env.js настроен.
+BUG-023  Major     [STILL BROKEN 2026-05-19] OTP request для несуществующего
+                   phone → backend 404 AUTH_USER_NOT_FOUND с readable
+                   detail/title, frontend silent (нет toast/alert/inline,
+                   кнопка осталась active). Тот же класс что BUG-001.
+BUG-024  Critical  [STILL PARTIAL 2026-05-19] /api/v1/users/* теперь 200 с
+                   X-Tenant-Id header. Старые URL (без /users) и
+                   /api/v1/edms/routes + /api/v1/integration/1c +
+                   /api/v1/users/org-positions всё ещё 500. UI силент-
+                   swallow'ит 500 на /routes и /integration (показывает
+                   пустоту вместо error toast).
+BUG-025  Info      [STILL VALID 2026-05-19] Wildcard permissions format
+                   подтверждён для Admin (`{"*":{"*":["manage"]}}`) и для
+                   Employee (`{"edms":{"inbox":["view"]...}}`). Новые
+                   HRMS-разделы добавлены (Кадры: Посещаемость/Отпуска/
+                   Зарплата).
+BUG-026  Minor     [FIXED 2026-05-19] Системная роль combobox в Add
+                   Employee = 5 опций (Выберите + 4 системные + 1 custom).
+                   Empty-combobox-pattern закрыт благодаря BUG-024
+                   namespace migration. Tenant-select REST blackbox
+                   остаётся неизвестен (нет multi-tenant юзера).
+BUG-027  Major     [FIXED 2026-05-19] runtime/env.js на обоих UI отдаёт
+                   корректный API_URL=https://dev-hub-api.greatmall.uz с
+                   Cache-Control: no-store, no-cache, must-revalidate.
+                   window.__ENV__.API_URL правильный в runtime. Минорный
+                   hygiene остаток: /env.js dev-stub всё ещё на dev, но
+                   runtime/env.js перезаписывает финальное значение.
+BUG-028  Minor     [STILL BROKEN 2026-05-19] Все 500-ответы (5+
+                   endpoints today: /edms/routes, /integration/1c,
+                   /users/org-positions, /integration/1c/employees)
+                   содержат "type":"http://localhost:8080/problems/help.html
+                   #INTERNAL_ERROR". Fix не применён.
+BUG-029  Major     [STILL BROKEN 2026-05-19] Admin UI login с admin123 +
+                   23 паролей проверено за две сессии — все 401
+                   ADMIN_AUTH_INVALID_CREDENTIALS. Workaround: Client UI
+                   OTP login как +998991234567 (но Admin UI остаётся
+                   недоступен). Нужны креды от dev-team.
+BUG-030  Critical [2026-05-19] Backend RBAC leak — EMPLOYEE через
+                   прямой API call (Bearer JWT + X-Tenant-Id) получает
+                   200 OK от /api/v1/users/members (полный staff
+                   directory) и /users/roles (полный permissions tree).
+                   Frontend route-guard работает, backend ACL не
+                   реализован. Тот же класс что BUG-006/009. Security.
+BUG-031  Major    [2026-05-19] /api/v1/integration/1c → 500 INTERNAL_ERROR
+                   даже для ADMIN. Frontend silent — /integration
+                   показывает пустые карточки без error-toast.
+                   Блокирует Mock 1C connection flow.
+BUG-032  Major    [2026-05-19] /api/v1/edms/routes → 500 silent. UI
+                   показывает "Шаблоны маршрутов не найдены" вместо
+                   error-toast — юзер думает что routes пустые,
+                   тогда как endpoint лежит. Класс BUG-001/019.
+BUG-033  Major    [2026-05-19] Mock 1C "Отправлено" UI-status lies —
+                   все 6 строк показывают success независимо от
+                   backend 207 response. Регрессия от 2026-05-04
+                   (часть BUG-003), выделено отдельно как баг
+                   Mock 1C UI.
+BUG-034  Minor    [2026-05-19] /env.js dev-stub всё ещё деплоится
+                   рядом с /runtime/env.js — два конкурирующих
+                   __ENV__ источника. Сейчас работает по счастливой
+                   случайности script-order. BUG-027 partial-fix tail.
