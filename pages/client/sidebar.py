@@ -7,17 +7,12 @@ from playwright.sync_api import Locator, Page
 from data.i18n import t
 
 ADMIN_NAV: tuple[tuple[str, str | None, str, str], ...] = (
-    ("Рабочее место", None, "Главный экран", "/home"),
-    ("Мой кабинет", None, "Расчётный лист", "/payslip"),
-    ("Мой кабинет", None, "График работы", "/work-schedule"),
-    ("Мой кабинет", None, "Отпуск", "/vacation"),
-    ("Входящие документы", None, "Входящие документы", "/inbox"),
-    ("Исходящие документы", None, "Исходящие документы", "/documents"),
-    ("Документооборот", None, "Шаблоны видов документов", "/templates"),
-    ("Документооборот", None, "Маршруты согласований", "/routes"),
+    ("Рабочее место", None, t("client.sidebar.link_home"), "/home"),
+    ("Мой кабинет", None, t("client.sidebar.subgroup_my_cabinet"), ""),
+    ("Документооборот", None, t("client.sidebar.subgroup_docflow"), ""),
+    ("Документооборот", None, "Согласование", ""),
     ("Администрирование", None, "Компания", "/organization"),
-    ("Администрирование", None, "Пользователи", "/members"),
-    ("Администрирование", None, "Настройки", "/integration"),
+    ("Администрирование", None, t("client.sidebar.link_members"), "/members"),
 )
 
 SECTION_NAMES: tuple[str, ...] = (
@@ -58,7 +53,9 @@ class ClientSidebar:
         ).first
 
     def section_header(self, name: str) -> Locator:
-        return self._nav.locator(f'[role="button"][aria-label="{name}"]').first
+        aria_button = self._nav.locator(f'[role="button"][aria-label="{name}"]').first
+        role_button = self._nav.get_by_role("button", name=name, exact=True).first
+        return aria_button.or_(role_button).first
 
     def subgroup_button(self, name: str) -> Locator:
         aria_button = self._nav.locator(f'button[aria-label="{name}"]').first
@@ -82,6 +79,8 @@ class ClientSidebar:
         return self.expand_subgroup(name)
 
     def expand_all_subgroups(self) -> Self:
+        for name in SECTION_NAMES:
+            self.expand_subgroup(name)
         for name in SUBGROUP_NAMES:
             self.expand_subgroup(name)
         return self
