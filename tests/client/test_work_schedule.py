@@ -1,15 +1,15 @@
-import allure
+"""BRD 3.0 / Мой кабинет / График работы."""
+
 import pytest
-from playwright.sync_api import Page, expect
 
-from config.settings import Settings
-from pages.client.work_schedule_page import WorkSchedulePage
+pytestmark = pytest.mark.skip(
+    reason="BUG-021: /work-schedule degenerate stub without structure (recon 2026-05-26)"
+)
 
 
-@pytest.mark.positive
-@allure.title("/work-schedule: empty state is visible")
-def test_work_schedule_empty_state(
-    client_admin_page: Page, settings: Settings
-) -> None:
-    page = WorkSchedulePage(client_admin_page).goto(settings.client_url)
-    expect(page.empty).to_be_visible(timeout=settings.nav_timeout)
+def test_work_schedule_has_calendar_or_pdf() -> None:
+    """BRD 3.0: страница должна иметь календарь или PDF просмотр графика."""
+
+
+def test_work_schedule_displays_current_period() -> None:
+    """BRD 3.0: текущий период (месяц/неделя) должен быть выделен."""

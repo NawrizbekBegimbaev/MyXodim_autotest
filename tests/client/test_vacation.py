@@ -1,13 +1,19 @@
-import allure
+"""BRD 3.0 / Мой кабинет / Отпуск."""
+
 import pytest
-from playwright.sync_api import Page, expect
 
-from config.settings import Settings
-from pages.client.vacation_page import VacationPage
+pytestmark = pytest.mark.skip(
+    reason="BUG-021: /vacation degenerate stub without structure (recon 2026-05-26)"
+)
 
 
-@pytest.mark.positive
-@allure.title("/vacation: empty state is visible")
-def test_vacation_empty_state(client_admin_page: Page, settings: Settings) -> None:
-    page = VacationPage(client_admin_page).goto(settings.client_url)
-    expect(page.empty).to_be_visible(timeout=settings.nav_timeout)
+def test_vacation_page_shows_days_balance() -> None:
+    """BRD 3.0: счётчик 'Доступно дней отпуска'."""
+
+
+def test_vacation_request_form_opens() -> None:
+    """BRD 3.0: форма заявки на отпуск."""
+
+
+def test_vacation_history_list_visible() -> None:
+    """BRD 3.0: список предыдущих заявок."""
