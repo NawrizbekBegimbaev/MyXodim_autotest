@@ -1,9 +1,8 @@
-"""Inbox + Организация + Интеграция + Штатные позиции — view-only страницы.
+"""Inbox + Организация + Интеграция — view-only страницы.
 
 Обновлено 2026-05-18 после редизайна:
 - /organization: табы "Данные"/"Филиалы", без секции Интеграция
 - /integration: hub с карточками провайдеров (1C/Bitrix24/Налоговая)
-- /org-positions: создание только через 1C, есть 1C-only alert
 """
 
 from __future__ import annotations
@@ -17,7 +16,6 @@ from pages.client.inbox_page import InboxPage
 from pages.client.organization_page import (
     IntegrationPage,
     OrganizationPage,
-    OrgPositionsPage,
 )
 
 # ---------- Inbox ----------
@@ -108,39 +106,7 @@ def test_integration_hub_has_filter_tabs(
         expect(page.tablist.get_by_role("tab", name=tab, exact=True)).to_be_visible()
 
 
-# ---------- Org-positions ----------
-
-
-@pytest.mark.positive
-@pytest.mark.xfail(reason="Current /org-positions UI has no 1C-only alert", strict=False)
-@allure.title("Org-positions: ручное создание заблокировано — есть 1C-only alert")
-def test_org_positions_has_1c_only_alert(
-    client_admin_page: Page, settings: Settings
-) -> None:
-    page = OrgPositionsPage(client_admin_page).goto(settings.client_url)
-    expect(page.heading).to_be_visible(timeout=settings.nav_timeout)
-    expect(page.alert_1c_only).to_be_visible(timeout=settings.expect_timeout)
-
-
-@pytest.mark.positive
-@allure.title("Org-positions: 2 view-tab'а (Список/Иерархия)")
-def test_org_positions_has_view_tabs(
-    client_admin_page: Page, settings: Settings
-) -> None:
-    page = OrgPositionsPage(client_admin_page).goto(settings.client_url)
-    expect(page.heading).to_be_visible(timeout=settings.nav_timeout)
-    for name in OrgPositionsPage.VIEW_TABS:
-        expect(page.view_tab(name)).to_be_visible(timeout=settings.expect_timeout)
-
-
-@pytest.mark.positive
-@allure.title("Org-positions: все 6 колонок таблицы видны")
-@pytest.mark.parametrize("col_name", OrgPositionsPage.COLUMNS)
-def test_org_positions_table_columns_visible(
-    client_admin_page: Page, settings: Settings, col_name: str
-) -> None:
-    page = OrgPositionsPage(client_admin_page).goto(settings.client_url)
-    expect(page.heading).to_be_visible(timeout=settings.nav_timeout)
-    expect(page.column_header(col_name)).to_be_visible(
-        timeout=settings.expect_timeout
-    )
+@pytest.mark.skip(reason="BUG-016: /org-positions still returns 200 on 2026-05-26")
+@pytest.mark.regression
+def test_org_positions_route_returns_404_or_redirects() -> None:
+    """BUG-016: legacy /org-positions should return 404 or redirect."""

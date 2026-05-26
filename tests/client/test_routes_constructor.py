@@ -26,14 +26,6 @@ def _fresh_route() -> str:
     return f"{E2E_PREFIX} CtorRoute {secrets.token_hex(3)}"
 
 
-# Все тесты в файле мутируют состояние через UI (CRUD-формы).
-pytestmark = [
-    pytest.mark.creates_data,
-    pytest.mark.needs_invitees,
-    pytest.mark.skip(reason="Route constructor save requires workflow targets/invitees; deferred to Step 4"),
-]
-
-
 @pytest.mark.positive
 @allure.title("Routes constructor: click default step → открывается panel 'Настройки шага'")
 def test_route_step_click_opens_settings_panel(
@@ -55,8 +47,7 @@ def test_route_step_panel_close_button(
     panel = editor.click_default_step()
     expect(panel.panel_title).to_be_visible(timeout=settings.expect_timeout)
     panel.close()
-    client_admin_page.wait_for_timeout(800)
-    expect(panel.panel_title).not_to_be_visible()
+    expect(panel.panel_title).not_to_be_visible(timeout=settings.expect_timeout)
 
 
 @pytest.mark.positive
@@ -68,11 +59,52 @@ def test_route_step_change_action_type(
     panel = editor.click_default_step()
     expect(panel.panel_title).to_be_visible(timeout=settings.expect_timeout)
     panel.click_action("ЭЦП подпись")
-    client_admin_page.wait_for_timeout(800)
     # Смена ничего не сломала — panel остался
-    expect(panel.panel_title).to_be_visible()
+    expect(panel.panel_title).to_be_visible(timeout=settings.expect_timeout)
 
 
+@pytest.mark.positive
+@allure.title("BRD 3.0 Routes: target combo has Role, Employee, Department options")
+def test_route_step_target_combo_has_role_employee_department_options(
+    client_admin_page: Page, settings: Settings
+) -> None:
+    editor = _open_editor(client_admin_page, settings)
+    panel = editor.click_default_step()
+    panel.target_type_combobox.click()
+    for option in ("Роль для согласований", "Сотрудник", "Подразделение"):
+        expect(panel.target_option(option)).to_be_visible(timeout=settings.expect_timeout)
+
+
+@pytest.mark.creates_data
+@pytest.mark.needs_invitees
+@pytest.mark.skip(reason="Requires department fixture and route save data setup")
+@pytest.mark.positive
+@allure.title("BRD 3.0 Routes: department target can be saved")
+def test_route_step_with_department_target_succeeds(
+    client_admin_page: Page, settings: Settings
+) -> None:
+    route_name = _fresh_route()
+    editor = _open_editor(client_admin_page, settings)
+    editor.fill_name(route_name)
+    panel = editor.click_default_step()
+    panel.select_target_department("[E2E] Подразделение")
+    panel.close()
+    editor.save()
+    expect(RoutesPage(client_admin_page).goto(settings.client_url).heading).to_be_visible(
+        timeout=settings.nav_timeout
+    )
+
+
+@pytest.mark.skip(reason="DOC-004: Position target removed from BRD 3.0 route builder")
+@pytest.mark.negative
+@allure.title("DOC-004 sentinel: route step with Position target")
+def test_route_step_with_position_target() -> None:
+    """Позиция как route target удалена; оставить skip до финального PO решения."""
+
+
+@pytest.mark.creates_data
+@pytest.mark.needs_invitees
+@pytest.mark.skip(reason="Route constructor save requires workflow targets/invitees; deferred")
 @pytest.mark.positive
 @allure.title("Routes constructor: задать имя и срок шага → save маршрута проходит")
 def test_route_step_fill_name_and_duration_then_save(

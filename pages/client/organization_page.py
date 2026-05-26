@@ -1,13 +1,10 @@
-"""Client UI: разделы /organization, /integration, /org-positions.
+"""Client UI: разделы /organization, /integration.
 
 Редизайн 2026-05-03:
 - /organization — табы "Данные"/"Филиалы". Секция "Интеграция" убрана,
   ключ переехал в /integration → "Настроить" по карточке 1C.
 - /integration — hub-страница со списком интеграций (1C/Bitrix24/Налоговая).
   Heading "Интеграция" (без "с 1С"). Ключ — за кликом "Настроить".
-- /org-positions — теперь поддерживает РУЧНОЕ создание позиций
-  (кнопка "+ Добавить позицию"). Alert "1C-only" убран. Новые табы
-  "Список"/"Иерархия". Новая колонка "При вакантности".
 """
 
 from playwright.sync_api import Locator, Page
@@ -119,68 +116,3 @@ class IntegrationPage(BasePage):
 
     def modal_key_masked(self) -> Locator:
         return self.modal_1c().get_by_text("•" * 32, exact=False)
-
-
-class OrgPositionsPage(BasePage):
-    """Штатные позиции.
-
-    С 2026-05-18 штатные позиции снова создаются только через 1С.
-    """
-
-    URL_PATH = "/org-positions"
-
-    COLUMNS: tuple[str, ...] = (
-        "Название",
-        "Отдел",
-        "Должность",
-        "Сотрудники",
-        "При вакантности",
-        "Действия",
-    )
-
-    VIEW_TABS: tuple[str, ...] = ("Список", "Иерархия")
-
-    def __init__(self, page: Page) -> None:
-        super().__init__(page)
-        self._heading: Locator = page.get_by_role(
-            "heading", name=t("client.org_positions.title"), level=4
-        )
-        self._alert_1c_only: Locator = page.get_by_text(
-            t("client.org_positions.alert_1c_only"), exact=True
-        )
-        self._add_button: Locator = page.get_by_role("button", name="+ Добавить позицию")
-        self._search_input: Locator = page.get_by_role(
-            "textbox", name="Поиск по названию…"
-        )
-        self._table: Locator = page.get_by_role("table").last
-        self._tablist: Locator = page.get_by_role("tablist").first
-
-    @property
-    def heading(self) -> Locator:
-        return self._heading
-
-    @property
-    def alert_1c_only(self) -> Locator:
-        return self._alert_1c_only
-
-    @property
-    def add_button(self) -> Locator:
-        return self._add_button
-
-    @property
-    def search_input(self) -> Locator:
-        return self._search_input
-
-    @property
-    def table(self) -> Locator:
-        return self._table
-
-    @property
-    def tablist(self) -> Locator:
-        return self._tablist
-
-    def view_tab(self, name: str) -> Locator:
-        return self._tablist.get_by_role("tab", name=name, exact=True)
-
-    def column_header(self, name: str) -> Locator:
-        return self._table.get_by_role("columnheader", name=name, exact=True)

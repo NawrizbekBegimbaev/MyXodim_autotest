@@ -17,10 +17,9 @@ from pages.client.position_dialogs import (
 )
 from pages.client.positions_page import PositionsPage
 
-pytestmark = [
-    pytest.mark.creates_data,
-    pytest.mark.skip(reason="Position CRUD mutates recon tenant; deferred until dedicated data setup"),
-]
+MUTATES_RECON_TENANT = pytest.mark.skip(
+    reason="Position CRUD mutates recon tenant; deferred until dedicated data setup"
+)
 
 
 def _open_positions(page: Page, settings: Settings) -> PositionsPage:
@@ -36,6 +35,59 @@ def _fresh_title(prefix: str = "Должн") -> str:
 # ---------- Positive ----------
 
 
+@pytest.mark.smoke
+@pytest.mark.positive
+@allure.title("BRD 3.0 /positions: table has Code and Created date columns")
+def test_positions_table_has_code_and_date_columns(
+    client_admin_page: Page, settings: Settings
+) -> None:
+    pos = _open_positions(client_admin_page, settings)
+    for column in PositionsPage.COLUMNS:
+        expect(pos.column_header(column)).to_be_visible(timeout=settings.expect_timeout)
+
+
+@pytest.mark.positive
+@allure.title("BRD 3.0 /positions: code filter accepts input")
+def test_positions_filter_by_code(client_admin_page: Page, settings: Settings) -> None:
+    pos = _open_positions(client_admin_page, settings)
+    pos.filter_by_code("E2E-CODE")
+    expect(pos.code_filter).to_have_value("E2E-CODE")
+
+
+@pytest.mark.positive
+@allure.title("BRD 3.0 /positions: date range filters accept input")
+def test_positions_filter_by_date_range(
+    client_admin_page: Page, settings: Settings
+) -> None:
+    pos = _open_positions(client_admin_page, settings)
+    pos.filter_by_date_range("2026-05-01", "2026-05-26")
+    expect(pos.date_from_filter).to_have_value("2026-05-01")
+    expect(pos.date_to_filter).to_have_value("2026-05-26")
+
+
+@pytest.mark.positive
+@allure.title("BRD 3.0 /positions: reset clears query filters")
+def test_positions_reset_filters_clears_query(
+    client_admin_page: Page, settings: Settings
+) -> None:
+    pos = _open_positions(client_admin_page, settings)
+    pos.search("E2E").filter_by_code("E2E-CODE").reset_filters()
+    expect(pos.search_input).to_have_value("")
+    expect(pos.code_filter).to_have_value("")
+
+
+@pytest.mark.skip(reason="Needs existing position fixture with row action in recon tenant")
+@pytest.mark.positive
+@allure.title("BRD 3.0 /positions: row action opens detail card")
+def test_positions_open_card_navigates_to_detail(
+    client_admin_page: Page, settings: Settings
+) -> None:
+    pos = _open_positions(client_admin_page, settings)
+    pos.open_card("Директор")
+    expect(client_admin_page).to_have_url(r"/positions/.+")
+
+
+@MUTATES_RECON_TENANT
 @pytest.mark.positive
 @allure.title("UC-3.7: создание должности → появляется в списке")
 def test_position_create_appears_in_list(
@@ -52,6 +104,7 @@ def test_position_create_appears_in_list(
     expect(pos.row_by_title(title)).to_be_visible(timeout=settings.expect_timeout)
 
 
+@MUTATES_RECON_TENANT
 @pytest.mark.positive
 @allure.title("UC-3.7 edit: меняем название должности")
 def test_position_edit_updates_title(
@@ -76,6 +129,7 @@ def test_position_edit_updates_title(
     expect(pos.row_by_title(updated)).to_be_visible(timeout=settings.nav_timeout)
 
 
+@MUTATES_RECON_TENANT
 @pytest.mark.positive
 @allure.title("UC-3.7 delete: подтверждение → должность исчезает")
 def test_position_delete_with_confirmation_removes_row(
@@ -99,6 +153,7 @@ def test_position_delete_with_confirmation_removes_row(
     expect(pos.row_by_title(title)).not_to_be_visible()
 
 
+@MUTATES_RECON_TENANT
 @pytest.mark.positive
 @allure.title("UC-3.7 delete: Cancel в confirmation → должность остаётся")
 def test_position_delete_cancel_keeps_row(
@@ -120,6 +175,7 @@ def test_position_delete_cancel_keeps_row(
     expect(pos.row_by_title(title)).to_be_visible(timeout=settings.expect_timeout)
 
 
+@MUTATES_RECON_TENANT
 @pytest.mark.positive
 @allure.title("UC-3.7 search: фильтр по названию")
 def test_positions_search_filters_list(
@@ -137,6 +193,7 @@ def test_positions_search_filters_list(
 # ---------- Negative ----------
 
 
+@MUTATES_RECON_TENANT
 @pytest.mark.negative
 @allure.title("UC-3.7 neg: пустое название → submit blocked / диалог остаётся")
 def test_position_create_with_empty_title_stays_on_dialog(
@@ -151,6 +208,7 @@ def test_position_create_with_empty_title_stays_on_dialog(
     expect(dialog.dialog).to_be_visible()
 
 
+@MUTATES_RECON_TENANT
 @pytest.mark.positive
 @allure.title("UC-3.7: повторное создание с тем же названием — поведение фронта (smoke check)")
 def test_position_create_with_duplicate_title_does_not_crash(
@@ -176,6 +234,24 @@ def test_position_create_with_duplicate_title_does_not_crash(
     expect(pos.heading).to_be_visible()
 
 
+@MUTATES_RECON_TENANT
+@pytest.mark.negative
+@allure.title("BRD 3.0 /positions: duplicate code is rejected")
+def test_position_create_duplicate_code_rejected(
+    client_admin_page: Page, settings: Settings
+) -> None:
+    title = _fresh_title("DupCode")
+    code = f"E2E-{secrets.token_hex(3)}"
+    pos = _open_positions(client_admin_page, settings)
+    pos.click_add()
+    PositionCreateDialog(client_admin_page).fill_title(title).fill_code(code).submit()
+    pos.click_add()
+    dialog = PositionCreateDialog(client_admin_page)
+    dialog.fill_title(f"{title} copy").fill_code(code).submit()
+    expect(dialog.dialog).to_be_visible(timeout=settings.expect_timeout)
+
+
+@MUTATES_RECON_TENANT
 @pytest.mark.positive
 @allure.title("UC-3.7: Cancel закрывает диалог без создания")
 def test_position_create_cancel_does_not_create(
@@ -194,6 +270,7 @@ def test_position_create_cancel_does_not_create(
 # ---------- Boundary ----------
 
 
+@MUTATES_RECON_TENANT
 @pytest.mark.negative
 @pytest.mark.parametrize(
     "title",

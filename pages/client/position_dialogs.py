@@ -20,6 +20,9 @@ class _PositionDialogBase(BasePage):
         self._title_input: Locator = self._dialog.get_by_role(
             "textbox", name=t("client.positions.field_title")
         )
+        self._code_input: Locator = self._dialog.get_by_label(
+            t("client.positions.field_code"), exact=True
+        )
         self._submit: Locator = self._dialog.get_by_role(
             "button", name=t(self.SUBMIT_KEY), exact=True
         )
@@ -33,6 +36,10 @@ class _PositionDialogBase(BasePage):
 
     def fill_title(self, title: str) -> Self:
         self._title_input.fill(title)
+        return self
+
+    def fill_code(self, code: str) -> Self:
+        self._code_input.fill(code)
         return self
 
     def submit(self) -> Self:

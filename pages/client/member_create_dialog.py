@@ -25,7 +25,7 @@ class MemberCreateDialog(BasePage):
             t("client.members.field_phone"), exact=False
         )
         self._pinfl: Locator = self._dialog.get_by_label(
-            t("client.members.field_pinfl"), exact=True
+            t("client.members.field_pinfl"), exact=False
         )
         self._role: Locator = self._dialog.get_by_role(
             "combobox", name=t("client.members.field_role"), exact=False
@@ -34,7 +34,11 @@ class MemberCreateDialog(BasePage):
             "combobox", name=t("client.members.field_position"), exact=True
         )
         self._department: Locator = self._dialog.get_by_role(
-            "combobox", name=t("client.members.field_department"), exact=True
+            "combobox", name=t("client.members.field_department_brd3"), exact=True
+        ).or_(
+            self._dialog.get_by_role(
+                "combobox", name=t("client.members.field_department"), exact=True
+            )
         )
         self._submit: Locator = self._dialog.get_by_role(
             "button", name=t("client.members.dialog_submit")
@@ -46,6 +50,18 @@ class MemberCreateDialog(BasePage):
     @property
     def dialog(self) -> Locator:
         return self._dialog
+
+    @property
+    def pinfl_input(self) -> Locator:
+        return self._pinfl
+
+    @property
+    def position_combobox(self) -> Locator:
+        return self._position
+
+    @property
+    def department_combobox(self) -> Locator:
+        return self._department
 
     def fill_required(
         self, first_name: str, last_name: str, phone: str, role: str
