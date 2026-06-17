@@ -1,12 +1,6 @@
-"""Admin UI: раздел /admins (платформенные администраторы).
-
-Появился 2026-05-03. С 2026-05-04 переведён на RU
-(BUG-014 закрыт): Администраторы / Имя / Телефон / Статус / Создан.
-"""
+"""Admin UI — platform admins list + create (/admins)."""
 
 from __future__ import annotations
-
-from typing import Self
 
 from playwright.sync_api import Locator, Page
 
@@ -14,53 +8,29 @@ from pages.base_page import BasePage
 
 
 class AdminsPage(BasePage):
-    URL_PATH = "/admins"
-
-    # Колонки таблицы (RU после i18n-фикса).
-    COLUMNS: tuple[str, ...] = ("Имя", "Телефон", "Статус", "Создан")
-
-    def __init__(self, page: Page) -> None:
+    def __init__(self, page: Page, base_url: str) -> None:
         super().__init__(page)
-        self._heading: Locator = page.get_by_role(
-            "heading", name="Администраторы", level=4
-        )
-        self._subtitle: Locator = page.get_by_text(
-            "Администраторы платформы"
-        )
-        self._add_button: Locator = page.get_by_role(
-            "button", name="Новый администратор"
-        )
-        self._search_input: Locator = page.get_by_role(
-            "textbox", name="Поиск..."
-        )
-        self._table: Locator = page.get_by_role("table").first
+        self.base_url = base_url
+        self.heading: Locator = page.get_by_role("heading", name="Администраторы")
+        self.new_admin_button: Locator = page.get_by_role("button", name="Новый администратор")
+        # Create form
+        self.name_input: Locator = page.get_by_role("textbox", name="Имя")
+        self.phone_input: Locator = page.get_by_role("textbox", name="Телефон")
+        self.submit_button: Locator = page.get_by_role("button", name="Сохранить")
 
-    @property
-    def heading(self) -> Locator:
-        return self._heading
-
-    @property
-    def subtitle(self) -> Locator:
-        return self._subtitle
-
-    @property
-    def add_button(self) -> Locator:
-        return self._add_button
-
-    @property
-    def search_input(self) -> Locator:
-        return self._search_input
-
-    @property
-    def table(self) -> Locator:
-        return self._table
-
-    def column_header(self, name: str) -> Locator:
-        return self._table.get_by_role("columnheader", name=name, exact=True)
-
-    def row_by_phone(self, phone: str) -> Locator:
-        return self._table.get_by_role("row").filter(has_text=phone)
-
-    def search(self, query: str) -> Self:
-        self._search_input.fill(query)
+    def open(self) -> AdminsPage:
+        self.goto(f"{self.base_url}/admins")
         return self
+
+    def create(self, full_name: str, phone: str) -> None:
+        self.new_admin_button.click()
+        self.name_input.fill(full_name)
+        self.phone_input.fill(phone)
+        self.submit_button.click()
+        # Success dialog "Администратор создан — сохраните пароль" → close it.
+        close = self.page.get_by_role("button", name="Закрыть")
+        close.wait_for(state="visible", timeout=15_000)
+        close.click()
+
+    def row(self, text: str) -> Locator:
+        return self.page.get_by_role("row").filter(has_text=text)

@@ -1,135 +1,71 @@
-"""POM страницы создания компании /tenants/new и success-view после submit.
+"""Admin UI — create company + admin (/tenants/new). Verified on staging."""
 
-После клика "Создать" страница меняет содержимое на success-state
-(heading "Компания создана") с ключом интеграции, tenantId, adminUserId
-прямо на экране. Извлечение этих значений — в `CompanyCreatedView`.
-"""
+from __future__ import annotations
 
 import re
-from typing import Self
+from dataclasses import dataclass
 
 from playwright.sync_api import Locator, Page
 
-from data.i18n import t
+from config.sanity_data import SanityTenantData
 from pages.base_page import BasePage
 
 
+@dataclass(frozen=True)
+class CreatedTenant:
+    name: str
+    admin_phone: str
+    integration_key: str
+    tenant_id: str
+    admin_id: str
+
+
 class CreateCompanyPage(BasePage):
-    URL_PATH = "/tenants/new"
-
-    def __init__(self, page: Page) -> None:
+    def __init__(self, page: Page, base_url: str) -> None:
         super().__init__(page)
-        self._page_heading: Locator = page.get_by_role(
-            "heading", name=t("admin.company.page_title"), level=5
-        )
-        self._name: Locator = page.get_by_role(
-            "textbox", name=t("admin.company.field_name")
-        )
-        self._slug: Locator = page.get_by_role(
-            "textbox", name=t("admin.company.field_slug")
-        )
-        self._inn: Locator = page.get_by_role(
-            "textbox", name=t("admin.company.field_inn")
-        )
-        self._first_name: Locator = page.get_by_role(
-            "textbox", name=t("admin.company.field_first_name")
-        )
-        self._last_name: Locator = page.get_by_role(
-            "textbox", name=t("admin.company.field_last_name")
-        )
-        self._phone: Locator = page.get_by_role(
-            "textbox", name=t("admin.company.field_phone")
-        )
-        self._pinfl: Locator = page.get_by_role(
-            "textbox", name=t("admin.company.field_pinfl")
-        )
-        self._submit: Locator = page.get_by_role(
-            "button", name=t("admin.company.submit")
-        )
-        self._cancel: Locator = page.get_by_role(
-            "button", name=t("admin.company.cancel")
-        )
+        self.base_url = base_url
+        self.name_input: Locator = page.get_by_role("textbox", name="Название компании")
+        self.slug_input: Locator = page.get_by_role("textbox", name="Slug")
+        self.inn_input: Locator = page.get_by_role("textbox", name="ИНН")
+        self.first_name_input: Locator = page.get_by_role("textbox", name="Имя")
+        self.last_name_input: Locator = page.get_by_role("textbox", name="Фамилия")
+        self.phone_input: Locator = page.get_by_role("textbox", name="Телефон")
+        self.pinfl_input: Locator = page.get_by_role("textbox", name="ПИНФЛ")
+        self.submit_button: Locator = page.get_by_role("button", name="Создать")
+        # Success modal marker.
+        self.success_marker: Locator = page.get_by_text("Ключ интеграции")
 
-    @property
-    def page_heading(self) -> Locator:
-        return self._page_heading
-
-    @property
-    def submit_button(self) -> Locator:
-        return self._submit
-
-    def fill_company(self, name: str, slug: str, inn: str = "") -> Self:
-        self._name.fill(name)
-        self._slug.fill(slug)
-        if inn:
-            self._inn.fill(inn)
+    def open(self) -> CreateCompanyPage:
+        self.goto(f"{self.base_url}/tenants/new")
         return self
 
-    def fill_admin(
-        self,
-        first_name: str,
-        last_name: str,
-        phone_local: str,
-        pinfl: str = "",
-    ) -> Self:
-        """phone_local — 9 цифр без префикса +998 (префикс показан отдельно)."""
-        self._first_name.fill(first_name)
-        self._last_name.fill(last_name)
-        self._phone.fill(phone_local)
-        if pinfl:
-            self._pinfl.fill(pinfl)
+    def fill(self, data: SanityTenantData) -> CreateCompanyPage:
+        self.name_input.fill(data.name)
+        self.slug_input.fill(data.slug)
+        self.inn_input.fill(data.inn)
+        self.first_name_input.fill(data.admin_first_name)
+        self.last_name_input.fill(data.admin_last_name)
+        self.phone_input.fill(data.admin_phone)
+        self.pinfl_input.fill(data.admin_pinfl)
         return self
 
-    def submit(self) -> Self:
-        """Click "Создать". Не ждёт ответа — клиент-валидация может заблокировать submit.
+    def submit(self) -> None:
+        self.submit_button.click()
 
-        Тесты сами выбирают как ждать результат: success-heading (positive) или
-        page-heading стабильно остаётся (negative).
-        """
-        self._submit.click()
-        return self
-
-
-class CompanyCreatedView(BasePage):
-    """Success-state после успешного создания (на той же странице /tenants/new)."""
-
-    INTEGRATION_KEY_PATTERN = re.compile(r"^bh_live_[a-f0-9]{32}$")
-    UUID_PATTERN = re.compile(r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$")
-
-    def __init__(self, page: Page) -> None:
-        super().__init__(page)
-        self._heading: Locator = page.get_by_role(
-            "heading", name=t("admin.company.success_heading"), level=5
+    def read_result(self, data: SanityTenantData) -> CreatedTenant:
+        """Read the success modal (integration key + ids). Call after submit."""
+        body = self.page.locator("body").inner_text()
+        key = self._find(r"bh_live_[0-9a-f]+", body)
+        ids = re.findall(r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}", body)
+        return CreatedTenant(
+            name=data.name,
+            admin_phone=data.admin_phone,
+            integration_key=key,
+            tenant_id=ids[0] if ids else "",
+            admin_id=ids[1] if len(ids) > 1 else "",
         )
-        self._back_button: Locator = page.get_by_role(
-            "button", name=t("admin.company.success_back_to_list")
-        )
-        # bh_live_<32 hex>
-        self._integration_key: Locator = page.get_by_text(self.INTEGRATION_KEY_PATTERN)
-        # UUID нашей tenant'а — первый из двух uuid на странице (в порядке: tenantId, adminUserId)
-        self._uuids: Locator = page.get_by_text(self.UUID_PATTERN)
 
-    @property
-    def heading(self) -> Locator:
-        return self._heading
-
-    @property
-    def back_button(self) -> Locator:
-        return self._back_button
-
-    @property
-    def integration_key_locator(self) -> Locator:
-        return self._integration_key
-
-    def integration_key(self) -> str:
-        return self._integration_key.inner_text().strip()
-
-    def tenant_id(self) -> str:
-        return self._uuids.nth(0).inner_text().strip()
-
-    def admin_user_id(self) -> str:
-        return self._uuids.nth(1).inner_text().strip()
-
-    def click_back(self) -> Self:
-        self._back_button.click()
-        return self
+    @staticmethod
+    def _find(pattern: str, text: str) -> str:
+        m = re.search(pattern, text)
+        return m.group(0) if m else ""

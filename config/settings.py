@@ -1,33 +1,39 @@
-from pydantic import Field
+"""Central config for the MyXodim sanity suite, loaded from .env."""
+
+from __future__ import annotations
+
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        extra="ignore",
+    )
 
-    admin_url: str = Field(default="https://dev-hub-admin.greatmall.uz")
-    client_url: str = Field(default="https://dev-hub-client.greatmall.uz")
-    mock1c_url: str = Field(default="https://dev-mock-1c.greatmall.uz")
+    # Base URLs (staging defaults)
+    client_url: str = "https://myxodim-stage.greatmall.uz"
+    admin_url: str = "https://myxodim-admin-stage.greatmall.uz"
+    mock1c_url: str = "https://mock1c-stage.greatmall.uz"
+    api_url: str = "https://myxodim-api-stage.greatmall.uz"
 
-    super_admin_phone: str = Field(default="+998991234567")
-    super_admin_password: str = Field(default="")
+    # Client login (staging accepts any 6-digit OTP for a registered phone)
+    client_phone: str = "+998994002396"
+    test_otp: str = "123456"
 
-    # Существующий тестовый сотрудник в Client UI на dev — для smoke логина.
-    # В обычных тестах сотрудники создаются на лету (см. CLAUDE.md §5).
-    client_smoke_phone: str = Field(default="+998905555518")
-    # Тестовая орг для positive Client UI тестов (пока BUG-001 блокирует
-    # создание новых компаний). Должна существовать на dev и client_smoke_phone
-    # должен быть Администратором в ней.
-    client_smoke_org: str = Field(default="[E2E recon] 8dgk1l")
+    # A known EMPLOYEE-role user (restricted access) for the RBAC case.
+    client_employee_phone: str = "+998994002396"
 
-    mock1c_username: str = Field(default="")
-    mock1c_password: str = Field(default="")
+    # Admin login
+    admin_phone: str = "+998991234567"
+    admin_password: str = "admin123"
 
-    test_otp: str = Field(default="123456")
-    phone_pool_start: int = Field(default=1)
-    phone_pool_size: int = Field(default=50)
+    # Locale used for RU/UZ text assertions
+    locale: str = "ru"
 
-    expect_timeout: int = Field(default=10_000)
-    nav_timeout: int = Field(default=15_000)
+    # Happy-path template
+    sanity_template_name: str = "Заявление на отпуск"
 
-    eimzo_pin_remembered: bool = Field(default=True)
+
+settings = Settings()

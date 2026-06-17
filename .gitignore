@@ -1,26 +1,44 @@
+# Python
 .venv/
 __pycache__/
 *.pyc
+*.egg-info/
 .pytest_cache/
-.mypy_cache/
 .ruff_cache/
+.mypy_cache/
+
+# Secrets / env
+.env
+.env.local
+
+# Stale auth state (Playwright storage_state — contains tokens/cookies)
 .auth/
+.phone_pool/
+
+# Test artifacts
 allure-results/
 allure-report/
 test-results/
 playwright-report/
-.env
-.env.local
-*.lock-phone
-.DS_Store
-*.egg-info/
-.phone_pool/
-# recon/ — recon-снапшоты, кроме baseline для periodic_recon.py
-recon/*
-!recon/baseline/
-recon/baseline/*.yml.new
+.playwright-mcp/
 
-tests/visual/artifacts/
+# Product source clone (read-only reference, not part of the suite)
+_core_src/
 
-# Локальные Claude Code harness-настройки (persona/settings), не для репо
+# Claude Code harness-local settings
 .claude/
+
+# Local tool binaries (allurectl)
+bin/
+
+# Run logs
+logs/
+
+# OS
+.DS_Store
+
+# recon scratch
+_recon/
+
+# Legacy suite — kept locally, not published (contains stale staging keys)
+archive/

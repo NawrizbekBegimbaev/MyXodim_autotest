@@ -1,51 +1,25 @@
 [project]
-name = "businesshub-e2e"
+name = "myxodim-sanity"
 version = "0.1.0"
-description = "BusinessHub E2E test suite (Playwright + pytest, UI-only)"
+description = "MyXodim daily sanity E2E suite (Playwright + pytest, UI-only)"
 requires-python = ">=3.11"
 dependencies = [
-    "playwright>=1.48",
+    "playwright>=1.49",
     "pytest>=8.3",
-    "pytest-playwright>=0.5",
-    "pytest-xdist>=3.6",
+    "pytest-playwright>=0.6",
     "pytest-rerunfailures>=14.0",
-    "pydantic>=2.9",
     "pydantic-settings>=2.6",
     "allure-pytest>=2.13",
-    "faker>=30.0",
-    "filelock>=3.16",
 ]
 
-[project.optional-dependencies]
+[dependency-groups]
 dev = [
-    "ruff>=0.7",
-    "mypy>=1.13",
+    "ruff>=0.8",
 ]
-
-[tool.setuptools]
-py-modules = []
 
 [tool.ruff]
-line-length = 100
+line-length = 110
 target-version = "py311"
-extend-exclude = ["scripts", "recon"]
 
 [tool.ruff.lint]
-select = ["E", "F", "I", "B", "UP", "SIM", "RUF"]
-ignore = ["E501", "RUF001", "RUF002", "RUF003"]  # русские буквы в строках
-
-[tool.mypy]
-python_version = "3.11"
-strict = true
-warn_unused_ignores = true
-warn_return_any = true
-disallow_untyped_defs = true
-no_implicit_optional = true
-exclude = ['^\.venv/', '^scripts/', '^recon/']
-# allure-pytest не имеет type stubs — декораторы триггерят strict-проверки
-disable_error_code = ["no-untyped-call", "untyped-decorator"]
-
-[[tool.mypy.overrides]]
-module = ["allure", "allure.*", "filelock"]
-ignore_missing_imports = true
-disable_error_code = ["no-untyped-call", "untyped-decorator", "misc"]
+select = ["E", "F", "I", "UP", "B"]
