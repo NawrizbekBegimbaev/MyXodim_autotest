@@ -51,5 +51,16 @@ else
   echo "[$STAMP] TestOps upload skipped (set ALLURE_ENDPOINT/TOKEN/PROJECT_ID in .env to enable)."
 fi
 
-echo "[$STAMP] done (exit $CODE)"
+# --- Build the XLSX report locally (does NOT send to Telegram). ---
+# The daily Telegram report is a curated, once-a-day deliverable (director is in
+# the chat), so sending is a deliberate manual step AFTER triaging failures —
+# never automatic on every run. Review the file, confirm the failures are real
+# product bugs (fix any test-side breakage and re-run first), then send with:
+#     .venv/bin/python scripts/report_telegram.py
+echo "[$STAMP] building XLSX report (local only, not sending)…"
+"$PY" scripts/report_telegram.py --results "$RESULTS" --no-send \
+  || echo "[$STAMP] WARN: report build step failed"
+
+echo "[$STAMP] done (exit $CODE). To send the report to Telegram once it is"
+echo "[$STAMP] reviewed:  .venv/bin/python scripts/report_telegram.py"
 exit $CODE

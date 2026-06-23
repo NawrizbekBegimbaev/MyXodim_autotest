@@ -35,5 +35,11 @@ class Settings(BaseSettings):
     # Happy-path template
     sanity_template_name: str = "Заявление на отпуск"
 
+    # Telegram report delivery (optional — sending is skipped if token/chat unset)
+    tg_bot_token: str = ""
+    tg_chat_id: str = ""
+    # Human-readable label shown in the report header / message.
+    tg_report_env: str = "staging"
+
 
 settings = Settings()
