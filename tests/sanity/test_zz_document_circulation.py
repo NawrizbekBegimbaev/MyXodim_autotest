@@ -59,7 +59,11 @@ def test_document_circulation(
     expect(create.heading).to_be_visible()
 
     with allure.step(f"Создать документ из шаблона «{TEMPLATE}» и сохранить черновик"):
+        # Step 1 «Реквизиты и маршрут»: pick the template, advance to «Содержимое».
         create.select_template(TEMPLATE)
+        expect(create.next_button).to_be_enabled()
+        create.go_to_content_step()
+        # Step 2 «Содержимое»: the draft-save button only exists here.
         expect(create.save_draft_button).to_be_enabled()
         create.save_as_draft()
         expect(admin_client_page).not_to_have_url(re.compile(r"/documents/create$"), timeout=20_000)

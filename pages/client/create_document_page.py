@@ -1,8 +1,10 @@
 """Client UI document create page (/documents/create).
 
-- Pick a template ("Вид документа").
-- Build a one-step approval route (executor + action «Согласовать»).
-- Submit for approval ("Отправить на согласование").
+Two-step wizard (product redesign 2026-06):
+- Step 1 «Реквизиты и маршрут»: pick a template ("Вид документа"), fill
+  requisites/route; advance with «Далее».
+- Step 2 «Содержимое»: attach content; here live «Сохранить как черновик» and
+  «Отправить на согласование».
 """
 
 from __future__ import annotations
@@ -20,6 +22,8 @@ class CreateDocumentPage(BasePage):
         # MUI Autocomplete labelled "Вид документа" (target the combobox input,
         # not the listbox which shares the same accessible name).
         self.template_input: Locator = page.get_by_role("combobox", name="Вид документа")
+        # Step-1 advance button (wizard): goes from «Реквизиты и маршрут» to «Содержимое».
+        self.next_button: Locator = page.get_by_role("button", name="Далее")
         self.add_step_button: Locator = page.get_by_role("button", name="+ Добавить").first
         self.executor_input: Locator = page.get_by_role("combobox", name="Исполнитель")
         self.coordinate_action: Locator = page.get_by_role("button", name="Согласовать").first
@@ -35,6 +39,10 @@ class CreateDocumentPage(BasePage):
         self.template_input.click()
         self.template_input.fill(name)
         self.page.get_by_role("option", name=name, exact=True).first.click()
+
+    def go_to_content_step(self) -> None:
+        """Advance the wizard from step 1 («Реквизиты и маршрут») to step 2 («Содержимое»)."""
+        self.next_button.click()
 
     def add_approval_step(self, executor_name: str) -> None:
         """Add one route step: executor + action «Согласовать» (no signing).
